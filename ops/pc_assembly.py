@@ -230,6 +230,12 @@ class pc_assembly_OT_select_parent_assembly(bpy.types.Operator):
         else:
             return False
 
+    def select_children(self,obj):
+        obj.select_set(True)
+        for child in obj.children:
+            child.select_set(True)
+            self.select_children(child)
+
     def execute(self, context):
         obj_bp = pc_utils.get_assembly_bp(context.object)
         assembly = pc_types.Assembly(obj_bp)
@@ -238,6 +244,8 @@ class pc_assembly_OT_select_parent_assembly(bpy.types.Operator):
             if assembly.obj_bp.parent:
                 assembly.obj_bp.parent.select_set(True)
                 context.view_layer.objects.active = assembly.obj_bp.parent
+
+                self.select_children(assembly.obj_bp.parent)
 
         return {'FINISHED'}
 
