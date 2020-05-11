@@ -333,3 +333,15 @@ def get_drivers(obj):
             drivers.append(driver)
 
     return drivers        
+
+def register_library(name,active_id,drop_id,icon):
+    pyclone = get_wm_props(bpy.context.window_manager)
+    if name not in pyclone.libraries:
+        pyclone.add_library(name=name,
+                            activate_id=active_id,
+                            drop_id=drop_id,
+                            icon=icon)
+
+def unregister_library(name):
+    pyclone = get_wm_props(bpy.context.window_manager)
+    pyclone.remove_library(name)
