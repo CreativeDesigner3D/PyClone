@@ -10,6 +10,8 @@ bl_info = {
     "category": "Asset Management",
 }
 
+import bpy
+from bpy.app.handlers import persistent
 from .ui import pc_filebrowser_ui
 from .ui import pc_lists
 from .ui import pc_view3d_ui_menu
@@ -24,6 +26,16 @@ from .ops import pc_object
 from .ops import pc_general
 from .ops import pc_window_manager
 from . import pyclone_props
+
+@persistent
+def load_driver_functions(scene):
+    """ Load Default Drivers
+    """
+    import inspect
+    from . import pyclone_driver_functions
+    for name, obj in inspect.getmembers(pyclone_driver_functions):
+        if name not in bpy.app.driver_namespace:
+            bpy.app.driver_namespace[name] = obj
 
 def register():
     pc_filebrowser_ui.register()
@@ -40,6 +52,7 @@ def register():
     pc_general.register()
     pc_window_manager.register()
     pyclone_props.register()
+    bpy.app.handlers.load_post.append(load_driver_functions)
 
 def unregister():
     pc_filebrowser_ui.unregister()
@@ -56,3 +69,4 @@ def unregister():
     pc_general.unregister()
     pc_window_manager.unregister()
     pyclone_props.unregister()
+    bpy.app.handlers.load_post.append(load_driver_functions)
