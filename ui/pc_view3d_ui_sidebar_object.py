@@ -165,7 +165,7 @@ class VIEW3D_PT_pc_object_drivers(Panel):
             props.var_name = var.name
 
             for target in var.targets:
-                if obj.drivers.show_driver_debug_info:
+                if obj.pyclone.show_driver_debug_info:
                     row = boxvar.row()
                     row.prop(var,"type",text="")
                     row = boxvar.row()
