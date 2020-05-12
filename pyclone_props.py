@@ -16,6 +16,7 @@ from bpy.props import (
         )
 import os
 import inspect
+import math
 
 prompt_types = [('FLOAT',"Float","Float"),
                 ('DISTANCE',"Distance","Distance"),
@@ -143,7 +144,7 @@ class Prompt(PropertyGroup):
         if self.prompt_type == 'DISTANCE':
             self.distance_value = value
         if self.prompt_type == 'ANGLE':
-            self.angle_value = value
+            self.angle_value = math.radians(value)
         if self.prompt_type == 'QUANTITY':
             self.quantity_value = value
         if self.prompt_type == 'PERCENTAGE':
