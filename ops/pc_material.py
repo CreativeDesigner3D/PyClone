@@ -13,6 +13,7 @@ from ..pc_lib import pc_unit, pc_utils, pc_types
 class pc_material_OT_add_material_slot(bpy.types.Operator):
     bl_idname = "pc_material.add_material_slot"
     bl_label = "Add Material Slot"
+    bl_description = "This adds a material slot and a material pointer"
     bl_options = {'UNDO'}
     
     object_name: StringProperty(name="Object Name")
@@ -28,6 +29,7 @@ class pc_material_OT_add_material_slot(bpy.types.Operator):
 class pc_material_OT_add_material_pointer(bpy.types.Operator):
     bl_idname = "pc_material.add_material_pointers"
     bl_label = "Add Material Pointers"
+    bl_description = "This add a material pointer"
     bl_options = {'UNDO'}
     
     object_name: StringProperty(name="Object Name")

@@ -20,6 +20,7 @@ from ..pc_lib import pc_unit, pc_utils, pc_types
 class pc_library_OT_set_active_library(Operator):
     bl_idname = "pc_library.set_active_library"
     bl_label = "Set Active Library"
+    bl_description = "This will set the active library"
     bl_options = {'UNDO'}
     
     library_name: StringProperty(name='Library Name')

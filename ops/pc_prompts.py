@@ -13,18 +13,11 @@ from bpy.props import (StringProperty,
 
 from ..pyclone_props import prompt_types
 
-#TODO: IMPLEMENT CALCULATORS
-#TODO: IMPLEMENT EASY WAY TO ADD VARS FOR DRIVERS FROM PROMPTS
-#TODO: IMPLEMENT EDIT PROMPT INTERFACE TO CHANGE PROMPT TYPE, RENAME, TAB INDEX 
-#TODO: IMPLEMENT WAY TO ADD COMBOBOX ITEMS
-#TODO: IMPLEMENT BETTER INTERFACE FOR VIEWING PROMPTS
-#TODO: FIND WAY TO EXTEND RIGHT CLICK PROPERTIES
-#TODO: IMPLEMENT PROMPTS FOR WORLDS, SCENES, MATERIALS, COLLECTIONS
-#TODO: IMPLEMENT TABS
 
 class pc_prompts_OT_add_prompt(Operator):
     bl_idname = "pc_prompts.add_prompt"
     bl_label = "Add Prompt"
+    bl_description = "This adds a prompt to the object"
     bl_options = {'UNDO'}
     
     obj_name: StringProperty(name="Data Name",default="")
@@ -73,6 +66,7 @@ class pc_prompts_OT_add_prompt(Operator):
 class pc_prompts_OT_add_calculator(Operator):
     bl_idname = "pc_prompts.add_calculator"
     bl_label = "Add Calculator"
+    bl_description = "This adds a calculator to the object"
     bl_options = {'UNDO'}
     
     obj_name: StringProperty(name="Data Name",default="")
@@ -110,6 +104,7 @@ class pc_prompts_OT_add_calculator(Operator):
 class pc_prompts_OT_add_calculator_prompt(Operator):
     bl_idname = "pc_prompts.add_calculator_prompt"
     bl_label = "Add Calculator"
+    bl_description = "This adds a prompt to a calculator"
     bl_options = {'UNDO'}
     
     calculator_name: StringProperty(name="Calculator Name",default="")
@@ -161,6 +156,7 @@ class pc_prompts_OT_add_calculator_prompt(Operator):
 class pc_prompts_OT_edit_calculator(Operator):
     bl_idname = "pc_prompts.edit_calculator"
     bl_label = "Edit Calculator"
+    bl_description = "This opens a dialog to edit a calculator"
     bl_options = {'UNDO'}
     
     calculator_name: StringProperty(name="Calculator Name",default="")
@@ -205,6 +201,7 @@ class pc_prompts_OT_edit_calculator(Operator):
 class pc_prompts_OT_run_calculator(Operator):
     bl_idname = "pc_prompts.run_calculator"
     bl_label = "Run Calculator"
+    bl_description = "This runs the calculate function for a calculator"
     bl_options = {'UNDO'}
     
     calculator_name: StringProperty(name="Calculator Name",default="")
@@ -241,6 +238,7 @@ class pc_prompts_OT_run_calculator(Operator):
 class pc_prompts_OT_edit_prompt(Operator):
     bl_idname = "pc_prompts.edit_prompt"
     bl_label = "Edit Prompt"
+    bl_description = "This opens a dialog to edit a prompt"
     bl_options = {'UNDO'}
     
     obj_name: StringProperty(name="Object Name",default="") #WHY DON"T POINTERS WORK?
@@ -270,6 +268,7 @@ class pc_prompts_OT_edit_prompt(Operator):
 class pc_prompts_OT_add_comboxbox_value(Operator):
     bl_idname = "pc_prompts.add_combobox_value"
     bl_label = "Add Combobox Value"
+    bl_description = "This adds a combobox item to a combobox prompt"
     bl_options = {'UNDO'}
     
     obj_name: StringProperty(name="Object Name",default="") #WHY DON"T POINTERS WORK?
@@ -306,6 +305,7 @@ class pc_prompts_OT_add_comboxbox_value(Operator):
 class pc_prompts_OT_delete_comboxbox_value(Operator):
     bl_idname = "pc_prompts.delete_combobox_value"
     bl_label = "Delete Combobox Value"
+    bl_description = "This deletes a combobox item from a combobox"
     bl_options = {'UNDO'}
     
     obj_name: StringProperty(name="Object Name",default="") #WHY DON"T POINTERS WORK?

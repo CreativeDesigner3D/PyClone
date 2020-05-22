@@ -142,6 +142,7 @@ class pc_assembly_OT_add_object(Operator):
 class pc_assembly_OT_connect_mesh_to_hooks_in_assembly(Operator):
     bl_idname = "pc_assembly.connect_meshes_to_hooks_in_assembly"
     bl_label = "Connect Mesh to Hooks In Assembly"
+    bl_description = "This connects all mesh hooks to a mesh"
     bl_options = {'UNDO'}
     
     obj_name: StringProperty(name="Object Name")
@@ -176,6 +177,7 @@ class pc_assembly_OT_connect_mesh_to_hooks_in_assembly(Operator):
 class pc_assembly_OT_create_assembly_script(Operator):
     bl_idname = "pc_assembly.create_assembly_script"
     bl_label = "Create Assembly Script"
+    bl_description = "This will create a script of the selected assembly. This is in development."
     bl_options = {'UNDO'}
     
     @classmethod
@@ -219,7 +221,7 @@ class pc_assembly_OT_create_assembly_script(Operator):
 class pc_assembly_OT_select_parent_assembly(bpy.types.Operator):
     bl_idname = "pc_assembly.select_parent"
     bl_label = "Select Parent Assembly"
-    bl_description = "UPDATES DEPENDENCICE"
+    bl_description = "This selects the parent assembly"
     bl_options = {'UNDO'}
 
     @classmethod

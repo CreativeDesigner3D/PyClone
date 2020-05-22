@@ -20,6 +20,7 @@ from ..pc_lib import pc_unit, pc_utils, pc_types
 class pc_object_OT_select_object(Operator):
     bl_idname = "pc_object.select_object"
     bl_label = "Select Object"
+    bl_description = "This selects an object and sets it as an active object"
     bl_options = {'UNDO'}
 
     obj_name: StringProperty(name='Object Name')

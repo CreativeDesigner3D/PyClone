@@ -24,6 +24,7 @@ class PC_prompt_collection(PropertyGroup):
 class DRIVER_OT_get_vars_from_object(Operator):
     bl_idname = "pc_driver.get_vars_from_object"
     bl_label = "Quick Variables"
+    bl_description = "This gets the available variables from an object"
     bl_options = {'UNDO'}
     
     object_name: StringProperty(name='Object Name')
@@ -235,6 +236,7 @@ class DRIVER_OT_get_vars_from_object(Operator):
 class DRIVER_OT_remove_variable(Operator):
     bl_idname = "pc_driver.remove_variable"
     bl_label = "Remove Variable"
+    bl_description = "This removes a variable"
     bl_options = {'UNDO'}
     
     object_name: StringProperty(name='Object Name')
