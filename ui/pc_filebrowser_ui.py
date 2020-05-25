@@ -47,81 +47,12 @@ class FILEBROWSER_PT_library_tabs(Panel):
                 layout.operator('pc_library.set_active_library',text=library.name,icon=library.icon,emboss=False).library_name = library.name
 
 
-class FILEBROWSER_PT_library_headers(Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'UI'
-    bl_label = "Directory Path"
-    bl_category = "Attributes"
-    bl_options = {'HIDE_HEADER'}
-
-    @classmethod
-    def poll(cls, context):
-        if len(context.area.spaces) > 1:
-            return True   
-        return False
-
-    def is_header_visible(self, context):
-        for region in context.area.regions:
-            if region.type == 'HEADER' and region.height <= 1:
-                return False
-
-        return True
-
-    def is_option_region_visible(self, context, space):
-        if not space.active_operator:
-            return False
-
-        for region in context.area.regions:
-            if region.type == 'TOOL_PROPS' and region.width <= 1:
-                return False
-
-        return True
-
-    def draw(self, context):
-        layout = self.layout
-        space = context.space_data
-        params = space.params
-
-        layout.scale_x = 1.3
-        layout.scale_y = 1.3
-
-        props = pyclone_utils.get_scene_props(context.scene)
-        # folders = utils_library.get_active_categories(props.library_tabs)
-        # active_folder_name = utils_library.get_active_category(props,folders)
-
-        # if active_folder_name:
-
-        #     if props.library_tabs == 'SCRIPT':
-        #         lib = utils_library.get_active_script_library()
-
-        #         row = layout.row(align=True)
-        #         row.menu('FILEBROWSER_MT_library_menu',icon='SCRIPTPLUGINS',text=lib.name.replace("_"," "))
-        #         row.menu('FILEBROWSER_MT_library_category_menu',icon='FILE_FOLDER',text=active_folder_name)   
-        #         if hasattr(bpy.types,lib.panel_id):
-        #             row.popover(panel=lib.panel_id,text="",icon='SETTINGS') 
-        #     else:
-        #         if len(folders) > 0:
-        #             row = layout.row(align=True)
-        #             row.menu('FILEBROWSER_MT_library_category_menu',icon='FILE_FOLDER',text=active_folder_name)
-        #             row.popover(panel="FILEBROWSER_PT_library_commands",text="",icon='SETTINGS')
-        #         else:
-        #             layout.popover(panel="FILEBROWSER_PT_library_commands",text="No Assets Found",icon='SETTINGS')
-        
-        # else:
-        #     if props.library_tabs == 'SCRIPT':
-        #         row = layout.row()
-        #         row.label(text="No Libraries Found")
-        #         row.operator('wm.url_open',text="Download Libraries").url="https://creativedesigner3d.com/"
-        #     else:
-        #         layout.popover(panel="FILEBROWSER_PT_library_commands",text="No Assets Found",icon='SETTINGS')
-
-
-class FILEBROWSER_HT_header_library(Header):
+class FILEBROWSER_HT_header(Header):
     bl_space_type = 'FILE_BROWSER'
 
     def draw(self, context):
         layout = self.layout
-        # props = utils_library.get_wm_props()
+
         st = context.space_data
 
         if st.active_operator is None:
@@ -130,127 +61,11 @@ class FILEBROWSER_HT_header_library(Header):
         layout.menu("FILEBROWSER_MT_view")
         layout.menu("FILEBROWSER_MT_select")
 
-        # TODO: Implement Tags and better library browsing features
-        # layout.popover(panel="FILEBROWSER_PT_tags",text="Tags",icon='COLOR')
-        # layout.separator_spacer()
-        # layout.popover(panel="FILEBROWSER_PT_library_settings",text="Options",icon='PREFERENCES')
-        # layout.separator_spacer()
-        # row = layout.row()
-        # row.alignment = 'RIGHT'
-        # row.prop(props,"file_browser_search_text",text="",icon='VIEWZOOM')
+        # can be None when save/reload with a file selector open
 
+        layout.separator_spacer()
 
-#TODO: Setup settings. Render thumbnail assest in library, open location in explorer.
-class FILEBROWSER_PT_library_settings(Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_label = "Library"
-    bl_region_type = 'HEADER'
-    bl_ui_units_x = 18
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text=str(context.space_data.params.directory.decode("utf-8")))
-        layout.operator('library.create_thumbnails_for_library',text="Create Thumbnails for Assets")
-
-
-# class FILEBROWSER_PT_tags(Panel):
-#     bl_space_type = 'FILE_BROWSER'
-#     bl_label = "Tags"
-#     bl_region_type = 'HEADER'
-#     bl_ui_units_x = 18
-
-#     def draw(self, context):
-#         layout = self.layout
-#         layout.label(text="TODO: Create Tags Interface")
-
-
-# class FILEBROWSER_PT_library_commands(Panel):
-#     bl_space_type = 'FILE_BROWSER'
-#     bl_label = "Library"
-#     bl_region_type = 'HEADER'
-#     bl_ui_units_x = 18
-
-#     def draw(self, context):
-#         layout = self.layout
-#         props = utils_library.get_scene_props()
-#         folders = utils_library.get_active_categories(props.library_tabs)
-#         active_folder_name = utils_library.get_active_category(props,folders)
-        
-#         if props.library_tabs == 'OBJECT':
-#             if active_folder_name:
-#                 layout.operator('library.save_object_to_asset_library',text="Save Object to Library",icon='BACK')
-#             layout.operator('bp_general.create_new_folder',text="Create New Category",icon='NEWFOLDER').path = utils_library.get_object_library_path()
-#             layout.operator('library.change_object_library_path',text="Change Library Path",icon='FILE_FOLDER')
-#         if props.library_tabs == 'COLLECTION':
-#             if active_folder_name:
-#                 layout.operator('library.save_collection_to_asset_library',text="Save Collection to Library",icon='BACK')
-#             layout.operator('bp_general.create_new_folder',text="Create New Category",icon='NEWFOLDER').path = utils_library.get_collection_library_path()
-#             layout.operator('library.change_collection_library_path',text="Change Library Path",icon='FILE_FOLDER')
-#         if props.library_tabs == 'MATERIAL':
-#             if active_folder_name:
-#                 layout.operator('library.save_material_to_asset_library',text="Save Material to Library",icon='BACK')
-#             layout.operator('bp_general.create_new_folder',text="Create New Category",icon='NEWFOLDER').path = utils_library.get_material_library_path()
-#             layout.operator('library.change_material_library_path',text="Change Library Path",icon='FILE_FOLDER')
-#         if props.library_tabs == 'WORLD':
-#             if active_folder_name:
-#                 layout.operator('library.save_world_to_asset_library',text="Save World to Library",icon='BACK')
-#             layout.operator('bp_general.create_new_folder',text="Create New Category",icon='NEWFOLDER').path = utils_library.get_world_library_path()
-#             layout.operator('library.change_world_library_path',text="Change Library Path",icon='FILE_FOLDER')
-
-
-#TODO: Setup library. Load folders from explorer.
-# class FILEBROWSER_MT_library_menu(Menu):
-#     bl_label = "Library"
-
-#     def draw(self, _context):
-#         layout = self.layout
-#         wm_props = utils_library.get_wm_props()
-#         for library in wm_props.script_libraries:
-#             layout.operator('library.change_script_library',text=library.name.replace("_"," "),icon='SCRIPTPLUGINS').library = library.name
-
-#TODO: Setup categories. Load folders from explorer.
-# class FILEBROWSER_MT_library_category_menu(Menu):
-#     bl_label = "Library"
-
-#     def draw(self, _context):
-#         layout = self.layout
-#         props = utils_library.get_scene_props()    
-#         folders = utils_library.get_active_categories(props.library_tabs)
-#         for folder in folders:
-#             if props.library_tabs == 'SCRIPT':
-#                 layout.operator('library.change_script_category',text=folder,icon='FILE_FOLDER').category = folder
-#             if props.library_tabs == 'OBJECT':
-#                 layout.operator('library.change_object_category',text=folder,icon='FILE_FOLDER').category = folder
-#             if props.library_tabs == 'COLLECTION':
-#                 layout.operator('library.change_collection_category',text=folder,icon='FILE_FOLDER').category = folder
-#             if props.library_tabs == 'MATERIAL':
-#                 layout.operator('library.change_material_category',text=folder,icon='FILE_FOLDER').category = folder                                                            
-#             if props.library_tabs == 'WORLD':
-#                 layout.operator('library.change_world_category',text=folder,icon='FILE_FOLDER').category = folder
-
-class FILEBROWSER_HT_header(Header):
-    bl_space_type = 'FILE_BROWSER'
-
-    def draw(self, context):
-        layout = self.layout
-
-        st = context.space_data
-        params = st.params
-        
-        if len(context.area.spaces) > 1:
-            pass
-        else:
-            if st.active_operator is None:
-                layout.template_header()
-
-            layout.menu("FILEBROWSER_MT_view")
-            layout.menu("FILEBROWSER_MT_select")
-
-            # can be None when save/reload with a file selector open
-
-            layout.separator_spacer()
-
-            layout.template_running_jobs()
+        layout.template_running_jobs()
 
 
 class FILEBROWSER_PT_display(Panel):
@@ -712,9 +527,6 @@ class FILEBROWSER_MT_context_menu(Menu):
 
 classes = (
     FILEBROWSER_PT_library_tabs,
-    FILEBROWSER_PT_library_headers,
-    FILEBROWSER_HT_header_library,
-    FILEBROWSER_PT_library_settings,
     FILEBROWSER_HT_header,
     FILEBROWSER_PT_display,
     FILEBROWSER_PT_filter,
