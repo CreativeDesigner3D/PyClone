@@ -5,11 +5,10 @@ def draw_assembly_properties(self, context):
     layout.operator_context = 'INVOKE_AREA'
     obj = context.object
     if obj and "PROMPT_ID" in obj and obj["PROMPT_ID"] != "":
-        layout.operator(obj["PROMPT_ID"],icon='SETTINGS')
-        layout.separator()
+        layout.operator(obj["PROMPT_ID"],icon='WINDOW')
     if obj and "MENU_ID" in obj and obj["MENU_ID"] != "":
-        layout.operator('INVOKE_DEFAULT',obj["MENU_ID"],icon='SETTINGS')
-        layout.separator()   
+        layout.menu(obj["MENU_ID"])
+        layout.separator()
 
 def draw_mesh_context(self, context):
     layout = self.layout
