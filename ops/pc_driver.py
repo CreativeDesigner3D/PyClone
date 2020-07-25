@@ -56,12 +56,12 @@ class DRIVER_OT_get_vars_from_object(Operator):
             self.prompts.remove(0)
 
         if self.assembly:
-            for prompt in self.assembly.obj_prompts.prompt_page.prompts:
+            for prompt in self.assembly.obj_prompts.pyclone.prompts:
                 prompt_copy = self.prompts.add()
                 prompt_copy.name = prompt.name
                 prompt_copy.prompt_type = prompt.prompt_type
         else:
-            for prompt in self.obj.prompt_page.prompts:
+            for prompt in self.obj.pyclone.prompts:
                 prompt_copy = self.prompts.add()
                 prompt_copy.name = prompt.name
                 prompt_copy.prompt_type = prompt.prompt_type
@@ -155,21 +155,21 @@ class DRIVER_OT_get_vars_from_object(Operator):
                             var.targets[0].id = self.obj                            
                         
                         if prompt.prompt_type == 'FLOAT':
-                            var.targets[0].data_path = 'prompt_page.prompts["' + prompt.name + '"].float_value'
+                            var.targets[0].data_path = 'pyclone.prompts["' + prompt.name + '"].float_value'
                         if prompt.prompt_type == 'DISTANCE':
-                            var.targets[0].data_path = 'prompt_page.prompts["' + prompt.name + '"].distance_value'
+                            var.targets[0].data_path = 'pyclone.prompts["' + prompt.name + '"].distance_value'
                         if prompt.prompt_type == 'ANGLE':
-                            var.targets[0].data_path = 'prompt_page.prompts["' + prompt.name + '"].angle_value'
+                            var.targets[0].data_path = 'pyclone.prompts["' + prompt.name + '"].angle_value'
                         if prompt.prompt_type == 'QUANTITY':
-                            var.targets[0].data_path = 'prompt_page.prompts["' + prompt.name + '"].quantity_value'
+                            var.targets[0].data_path = 'pyclone.prompts["' + prompt.name + '"].quantity_value'
                         if prompt.prompt_type == 'PERCENTAGE':
-                            var.targets[0].data_path = 'prompt_page.prompts["' + prompt.name + '"].percentage_value'
+                            var.targets[0].data_path = 'pyclone.prompts["' + prompt.name + '"].percentage_value'
                         if prompt.prompt_type == 'CHECKBOX':
-                            var.targets[0].data_path = 'prompt_page.prompts["' + prompt.name + '"].checkbox_value'
+                            var.targets[0].data_path = 'pyclone.prompts["' + prompt.name + '"].checkbox_value'
                         if prompt.prompt_type == 'COMBOBOX':
-                            var.targets[0].data_path = 'prompt_page.prompts["' + prompt.name + '"].combobox_index'
+                            var.targets[0].data_path = 'pyclone.prompts["' + prompt.name + '"].combobox_index'
                         if prompt.prompt_type == 'TEXT':
-                            var.targets[0].data_path = 'prompt_page.prompts["' + prompt.name + '"].text_value'
+                            var.targets[0].data_path = 'pyclone.prompts["' + prompt.name + '"].text_value'
 
                 var.type = 'SINGLE_PROP'
                 for target in var.targets:
@@ -200,7 +200,7 @@ class DRIVER_OT_get_vars_from_object(Operator):
         self.obj = bpy.data.objects[self.object_name]
         obj_bp = pc_utils.get_assembly_bp(self.obj)
         if obj_bp:
-            self.assembly = bp_types.Assembly(obj_bp)
+            self.assembly = pc_types.Assembly(obj_bp)
         self.get_prompts()
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=400)
@@ -246,7 +246,7 @@ class DRIVER_OT_remove_variable(Operator):
 
     def execute(self, context):
         obj = bpy.data.objects[self.object_name]
-        drivers = bp_utils.get_drivers(obj)
+        drivers = pc_utils.get_drivers(obj)
         for driver in drivers:
             if driver.data_path == self.data_path:
                 if driver.array_index == self.array_index:
