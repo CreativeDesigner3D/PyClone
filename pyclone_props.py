@@ -183,7 +183,7 @@ class Prompt(PropertyGroup):
     def draw_prompt_properties(self,layout):
         pass #RENAME PROMPT, #LOCK VALUE,  #IF COMBOBOX THEN COLUMN NUMBER
 
-    def draw(self,layout):
+    def draw(self,layout,allow_edit=True):
         row = layout.row()
         row.label(text=self.name)
         if self.prompt_type == 'FLOAT':
@@ -199,15 +199,19 @@ class Prompt(PropertyGroup):
         if self.prompt_type == 'CHECKBOX':
             row.prop(self,"checkbox_value",text="")
         if self.prompt_type == 'COMBOBOX':
-            props = row.operator('pc_prompts.add_combobox_value',text="",icon='ADD')
-            props.obj_name = self.id_data.name
-            props.prompt_name = self.name
-            props = row.operator('pc_prompts.delete_combobox_value',text="",icon='X')
-            props.obj_name = self.id_data.name
-            props.prompt_name = self.name            
-            col = layout.column()
-            col.template_list("PC_UL_combobox"," ", self, "combobox_items", self, "combobox_index",
-                              rows=len(self.combobox_items)/self.combobox_columns,type='GRID',columns=self.combobox_columns)
+            if allow_edit:
+                props = row.operator('pc_prompts.add_combobox_value',text="",icon='ADD')
+                props.obj_name = self.id_data.name
+                props.prompt_name = self.name
+                props = row.operator('pc_prompts.delete_combobox_value',text="",icon='X')
+                props.obj_name = self.id_data.name
+                props.prompt_name = self.name   
+                col = layout.column()
+                col.template_list("PC_UL_combobox"," ", self, "combobox_items", self, "combobox_index",
+                                rows=len(self.combobox_items)/self.combobox_columns,type='GRID',columns=self.combobox_columns)
+            else:
+                row.template_list("PC_UL_combobox"," ", self, "combobox_items", self, "combobox_index",
+                                rows=len(self.combobox_items)/self.combobox_columns,type='GRID',columns=self.combobox_columns)
 
         if self.prompt_type == 'TEXT':
             row.prop(self,"text_value",text="")
@@ -227,14 +231,13 @@ class Calculator_Prompt(PropertyGroup):
         prompt_path = 'pyclone.calculators["' + calculator_name + '"].prompts["' + self.name + '"]'
         return Variable(self.id_data, prompt_path + '.distance_value',name)    
 
-
 class Calculator(PropertyGroup):
     prompts: CollectionProperty(name="Prompts",type=Calculator_Prompt)
-    total_distance: FloatProperty(name="Total Distance",subtype='DISTANCE')
+    distance_obj: PointerProperty(name="Distance Obj",type=bpy.types.Object)
 
     def set_total_distance(self,expression="",variables=[],value=0):
-        data_path = 'pyclone.calculators["' + self.name + '"].total_distance'
-        driver = self.id_data.driver_add(data_path)
+        data_path = 'pyclone.calculator_distance'
+        driver = self.distance_obj.driver_add(data_path)
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
@@ -250,7 +253,7 @@ class Calculator(PropertyGroup):
         props.calculator_name = self.name
         props.obj_name = self.id_data.name
         
-        box.prop(self,'total_distance')
+        box.prop(self.distance_obj.pyclone,'calculator_distance')
         box = col.box()
         for prompt in self.prompts:
             prompt.draw(box)
@@ -269,6 +272,8 @@ class Calculator(PropertyGroup):
         pass
 
     def calculate(self):
+        self.distance_obj.hide_viewport = False
+
         non_equal_prompts_total_value = 0
         equal_prompt_qty = 0
         calc_prompts = []
@@ -280,19 +285,20 @@ class Calculator(PropertyGroup):
                 non_equal_prompts_total_value += prompt.distance_value
 
         if equal_prompt_qty > 0:
-            prompt_value = (self.total_distance - non_equal_prompts_total_value) / equal_prompt_qty
+            prompt_value = (self.distance_obj.pyclone.calculator_distance - non_equal_prompts_total_value) / equal_prompt_qty
 
             for prompt in calc_prompts:
                 prompt.distance_value = prompt_value
 
-            self.id_data.location = self.id_data.location #NOT SURE THIS IS NEEDED
+            self.id_data.location = self.id_data.location 
 
 
 class PC_Object_Props(PropertyGroup):
     show_driver_debug_info: BoolProperty(name="Show Driver Debug Info", default=False)
-    pointers: bpy.props.CollectionProperty(name="Slots", type=Pointer_Slot)
+    pointers: bpy.props.CollectionProperty(name="Pointer Slots", type=Pointer_Slot)
     prompts: CollectionProperty(type=Prompt, name="Prompts")
     calculators: CollectionProperty(type=Calculator, name="Calculators")
+    calculator_distance: FloatProperty(name="Calculators",subtype='DISTANCE')
 
     def get_var(self,data_path,name):
         return Variable(self.id_data,data_path,name)
@@ -318,13 +324,22 @@ class PC_Object_Props(PropertyGroup):
         prompt.name = prompt_name
         return prompt
 
-    def add_calculator(self,calculator_name):
+    def add_calculator(self,calculator_name,calculator_object):
         calculator = self.calculators.add()
+        calculator.distance_obj = calculator_object
         calculator.name = calculator_name
         return calculator
 
     def modifier(self,modifier,property_name,index=-1,expression="",variables=[]):
         driver = modifier.driver_add(property_name,index)
+        add_driver_variables(driver,variables)
+        driver.driver.expression = expression
+
+    def hide(self,expression,variables):
+        driver = self.id_data.driver_add('hide_viewport')
+        add_driver_variables(driver,variables)
+        driver.driver.expression = expression
+        driver = self.id_data.driver_add('hide_render')
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
