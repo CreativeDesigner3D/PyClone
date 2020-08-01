@@ -335,6 +335,22 @@ class PC_Object_Props(PropertyGroup):
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
+    def add_data_driver(self,property_name,index,expression,variables):
+        if index == -1:
+            driver = self.id_data.data.driver_add(property_name)
+        else:
+            driver = self.id_data.data.driver_add(property_name,index)
+        add_driver_variables(driver,variables)
+        driver.driver.expression = expression
+
+    def add_driver(self,property_name,index,expression,variables):
+        if index == -1:
+            driver = self.id_data.driver_add(property_name)
+        else:
+            driver = self.id_data.driver_add(property_name,index)
+        add_driver_variables(driver,variables)
+        driver.driver.expression = expression
+
     def hide(self,expression,variables):
         driver = self.id_data.driver_add('hide_viewport')
         add_driver_variables(driver,variables)
@@ -343,32 +359,50 @@ class PC_Object_Props(PropertyGroup):
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
-    def loc_x(self,expression,variables):
+    def loc_x(self,expression="",variables=[],value=0):
+        if expression == "":
+            self.id_data.location.x = value
+            return
         driver = self.id_data.driver_add('location',0)
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
-    def loc_y(self,expression,variables):
+    def loc_y(self,expression="",variables=[],value=0):
+        if expression == "":
+            self.id_data.location.y = value        
+            return
         driver = self.id_data.driver_add('location',1)
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
-    def loc_z(self,expression,variables):
+    def loc_z(self,expression="",variables=[],value=0):
+        if expression == "":
+            self.id_data.location.z = value        
+            return
         driver = self.id_data.driver_add('location',2)
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
-    def rot_x(self,expression,variables):
+    def rot_x(self,expression="",variables=[],value=0):
+        if expression == "":
+            self.id_data.rotation_euler.x = value        
+            return
         driver = self.id_data.driver_add('rotation_euler',0)
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
-    def rot_y(self,expression,variables):
+    def rot_y(self,expression="",variables=[],value=0):
+        if expression == "":
+            self.id_data.rotation_euler.y = value      
+            return  
         driver = self.id_data.driver_add('rotation_euler',1)
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
-    def rot_z(self,expression,variables):
+    def rot_z(self,expression="",variables=[],value=0):
+        if expression == "":
+            self.id_data.rotation_euler.z = value        
+            return
         driver = self.id_data.driver_add('rotation_euler',2)
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
