@@ -267,6 +267,11 @@ class Calculator(PropertyGroup):
     def add_calculator_prompt(self,name):
         prompt = self.prompts.add()
         prompt.name = name
+        return prompt
+
+    def get_calculator_prompt(self,name):
+        if name in self.prompts:
+            return self.prompts[name]
 
     def remove_calculator_prompt(self,name):
         pass
