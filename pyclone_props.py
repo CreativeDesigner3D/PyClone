@@ -305,8 +305,33 @@ class PC_Object_Props(PropertyGroup):
     calculators: CollectionProperty(type=Calculator, name="Calculators")
     calculator_distance: FloatProperty(name="Calculators",subtype='DISTANCE')
 
-    def get_var(self,data_path,name):
-        return Variable(self.id_data,data_path,name)
+    def add_prompt(self,prompt_type,prompt_name):
+        prompt = self.prompts.add()
+        prompt.prompt_type = prompt_type
+        prompt.name = prompt_name
+        return prompt
+
+    def add_calculator(self,calculator_name,calculator_object):
+        calculator = self.calculators.add()
+        calculator.distance_obj = calculator_object
+        calculator.name = calculator_name
+        return calculator
+
+    def add_data_driver(self,property_name,index,expression,variables):
+        if index == -1:
+            driver = self.id_data.data.driver_add(property_name)
+        else:
+            driver = self.id_data.data.driver_add(property_name,index)
+        add_driver_variables(driver,variables)
+        driver.driver.expression = expression
+
+    def add_driver(self,property_name,index,expression,variables):
+        if index == -1:
+            driver = self.id_data.driver_add(property_name)
+        else:
+            driver = self.id_data.driver_add(property_name,index)
+        add_driver_variables(driver,variables)
+        driver.driver.expression = expression
 
     def delete_prompt(self,name):
         for index, prompt in enumerate(self.prompts):
@@ -323,36 +348,15 @@ class PC_Object_Props(PropertyGroup):
         for cal in self.calculators:
             cal.draw(layout)
 
-    def add_prompt(self,prompt_type,prompt_name):
-        prompt = self.prompts.add()
-        prompt.prompt_type = prompt_type
-        prompt.name = prompt_name
-        return prompt
+    def get_var(self,data_path,name):
+        return Variable(self.id_data,data_path,name)
 
-    def add_calculator(self,calculator_name,calculator_object):
-        calculator = self.calculators.add()
-        calculator.distance_obj = calculator_object
-        calculator.name = calculator_name
-        return calculator
+    def get_prompt(self,prompt_name):
+        if prompt_name in self.prompts:
+            return self.prompts[prompt_name]
 
     def modifier(self,modifier,property_name,index=-1,expression="",variables=[]):
         driver = modifier.driver_add(property_name,index)
-        add_driver_variables(driver,variables)
-        driver.driver.expression = expression
-
-    def add_data_driver(self,property_name,index,expression,variables):
-        if index == -1:
-            driver = self.id_data.data.driver_add(property_name)
-        else:
-            driver = self.id_data.data.driver_add(property_name,index)
-        add_driver_variables(driver,variables)
-        driver.driver.expression = expression
-
-    def add_driver(self,property_name,index,expression,variables):
-        if index == -1:
-            driver = self.id_data.driver_add(property_name)
-        else:
-            driver = self.id_data.driver_add(property_name,index)
         add_driver_variables(driver,variables)
         driver.driver.expression = expression
 
