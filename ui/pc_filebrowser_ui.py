@@ -393,6 +393,8 @@ class FILEBROWSER_PT_directory_path(Panel):
     def draw(self, context):
         layout = self.layout
         space = context.space_data
+        if space.type != 'FILE_BROWSER':
+            return
         params = space.params
 
         layout.scale_x = 1.3
