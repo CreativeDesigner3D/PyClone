@@ -139,6 +139,7 @@ class Prompt(PropertyGroup):
             return self.text_value
 
     def set_value(self,value):
+        self.id_data.hide_viewport = False
         if self.prompt_type == 'FLOAT':
             self.float_value = value
         if self.prompt_type == 'DISTANCE':
@@ -155,6 +156,7 @@ class Prompt(PropertyGroup):
             self.combobox_index = value #TODO: IMPLEMENT UI LIST
         if self.prompt_type == 'TEXT':
             self.text_value = value
+        self.id_data.hide_viewport = True
 
     def set_formula(self,expression,variables):
         prompt_path = 'pyclone.prompts["' + self.name + '"]'
