@@ -105,7 +105,7 @@ class pc_assembly_OT_add_object(Operator):
         obj_bp = pc_utils.get_assembly_bp(context.object)
         assembly = pc_types.Assembly(obj_bp)
         if self.object_type == 'EMPTY':
-            assembly.add_empty("New Empty")
+            assembly.add_empty(self.object_name)
 
         if self.object_type == 'MESH':
             obj_mesh = pc_utils.create_cube_mesh(self.object_name,(assembly.obj_x.location.x,
