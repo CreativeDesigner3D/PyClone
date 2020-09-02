@@ -88,7 +88,7 @@ class Prompt(PropertyGroup):
     prompt_type: EnumProperty(name="Prompt Type",items=prompt_types)
 
     float_value: FloatProperty(name="Float Value")
-    distance_value: FloatProperty(name="Distance Value",subtype='DISTANCE')
+    distance_value: FloatProperty(name="Distance Value",subtype='DISTANCE',precision=2)
     angle_value: FloatProperty(name="Angle Value",subtype='ANGLE')
     quantity_value: IntProperty(name="Quantity Value",subtype='DISTANCE',min=0)
     percentage_value: FloatProperty(name="Percentage Value",subtype='PERCENTAGE',min=0,max=1)
@@ -341,9 +341,11 @@ class PC_Object_Props(PropertyGroup):
                 self.prompts.remove(index)
 
     def draw_prompts(self,layout):
-        props = layout.operator('pc_prompts.add_prompt')
+        row = layout.row(align=True)
+        row.scale_y = 1.3
+        props = row.operator('pc_prompts.add_prompt',icon='LINENUMBERS_ON')
         props.obj_name = self.id_data.name
-        props = layout.operator('pc_prompts.add_calculator')
+        props = row.operator('pc_prompts.add_calculator',icon='SYNTAX_ON')
         props.obj_name = self.id_data.name        
         for prompt in self.prompts:
             prompt.draw(layout)
