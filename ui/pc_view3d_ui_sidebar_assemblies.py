@@ -2,7 +2,6 @@ import bpy
 from ..pc_lib import pc_types, pc_utils
 from .. import pyclone_utils
 
-
 def draw_assembly_properties(context, layout, assembly):
     scene_props = pyclone_utils.get_scene_props(context.scene)
 
@@ -54,7 +53,121 @@ def draw_assembly_properties(context, layout, assembly):
                 row.operator('pc_object.select_object',text=child.name,icon=pc_utils.get_object_icon(child)).obj_name = child.name
 
     if scene_props.assembly_tabs == 'LOGIC':
-        pass#TODO: IMPLEMENT DRIVER INTERFACE
+        
+        box.prop(scene_props,'driver_tabs',text='')
+        if scene_props.driver_tabs == 'LOC_X':
+            box.prop(assembly.obj_bp,'location',index=0,text="Location X")
+            drivers = pyclone_utils.get_drivers(assembly.obj_bp)
+            for driver in drivers:
+                if driver.data_path == 'location' and driver.array_index == 0:
+                    pyclone_utils.draw_driver(layout,assembly.obj_bp,driver)    
+
+        if scene_props.driver_tabs == 'LOC_Y':
+            box.prop(assembly.obj_bp,'location',index=1,text="Location Y")
+            drivers = pyclone_utils.get_drivers(assembly.obj_bp)
+            for driver in drivers:
+                if driver.data_path == 'location' and driver.array_index == 1:
+                    pyclone_utils.draw_driver(layout,assembly.obj_bp,driver)  
+
+        if scene_props.driver_tabs == 'LOC_Z':
+            box.prop(assembly.obj_bp,'location',index=2,text="Location Z")
+            drivers = pyclone_utils.get_drivers(assembly.obj_bp)
+            for driver in drivers:
+                if driver.data_path == 'location' and driver.array_index == 2:
+                    pyclone_utils.draw_driver(layout,assembly.obj_bp,driver)  
+
+        if scene_props.driver_tabs == 'ROT_X':
+            box.prop(assembly.obj_bp,'rotation_euler',index=0,text="Rotation X")
+            drivers = pyclone_utils.get_drivers(assembly.obj_bp)
+            for driver in drivers:
+                if driver.data_path == 'rotation_euler' and driver.array_index == 0:
+                    pyclone_utils.draw_driver(layout,assembly.obj_bp,driver)  
+
+        if scene_props.driver_tabs == 'ROT_Y':
+            box.prop(assembly.obj_bp,'rotation_euler',index=1,text="Rotation Y")
+            drivers = pyclone_utils.get_drivers(assembly.obj_bp)
+            for driver in drivers:
+                if driver.data_path == 'rotation_euler' and driver.array_index == 1:
+                    pyclone_utils.draw_driver(layout,assembly.obj_bp,driver)  
+
+        if scene_props.driver_tabs == 'ROT_Z':
+            box.prop(assembly.obj_bp,'rotation_euler',index=2,text="Rotation Z")
+            drivers = pyclone_utils.get_drivers(assembly.obj_bp)
+            for driver in drivers:
+                if driver.data_path == 'rotation_euler' and driver.array_index == 2:
+                    pyclone_utils.draw_driver(layout,assembly.obj_bp,driver)  
+
+        if scene_props.driver_tabs == 'DIM_X':
+            box.prop(assembly.obj_x,'location',index=0,text="Dimension X")
+            drivers = pyclone_utils.get_drivers(assembly.obj_x)
+            for driver in drivers:
+                if driver.data_path == 'location' and driver.array_index == 0:
+                    pyclone_utils.draw_driver(layout,assembly.obj_x,driver)  
+
+        if scene_props.driver_tabs == 'DIM_Y':
+            box.prop(assembly.obj_y,'location',index=1,text="Dimension Y")
+            drivers = pyclone_utils.get_drivers(assembly.obj_y)
+            for driver in drivers:
+                if driver.data_path == 'location' and driver.array_index == 1:
+                    pyclone_utils.draw_driver(layout,assembly.obj_y,driver)  
+
+        if scene_props.driver_tabs == 'DIM_Z':
+            box.prop(assembly.obj_z,'location',index=2,text="Dimension Z")
+            drivers = pyclone_utils.get_drivers(assembly.obj_z)
+            for driver in drivers:
+                if driver.data_path == 'location' and driver.array_index == 2:
+                    pyclone_utils.draw_driver(layout,assembly.obj_z,driver)  
+
+        if scene_props.driver_tabs == 'PROMPTS':
+            if len(assembly.obj_prompts.pyclone.prompts) == 0:
+                box.label('No Prompts')  
+                return    
+
+            box.template_list("PC_UL_prompts"," ", assembly.obj_prompts.pyclone, "prompts", assembly.obj_prompts.pyclone, "prompt_index",rows=5,type='DEFAULT')
+            if assembly.obj_prompts.pyclone.prompt_index + 1 > len(assembly.obj_prompts.pyclone.prompts):
+                return 
+
+            prompt = assembly.obj_prompts.pyclone.prompts[assembly.obj_prompts.pyclone.prompt_index]
+
+            if prompt:
+                drivers = pyclone_utils.get_drivers(assembly.obj_prompts)
+                if len(drivers) == 0:
+                    box.operator('pc_driver.add_driver')
+                else:
+                    box.operator('pc_driver.remove_driver')
+                for driver in drivers:
+                    if driver.data_path == prompt.get_data_path():
+                        pyclone_utils.draw_driver(box,assembly.obj_prompts,driver)  
+
+        if scene_props.driver_tabs == 'CALCULATORS':
+            if len(assembly.obj_prompts.pyclone.calculators) == 0:
+                box.label('No Calculators')  
+                return
+
+            box.template_list("PC_UL_calculators"," ", assembly.obj_prompts.pyclone, "calculators", assembly.obj_prompts.pyclone, "calculator_index",rows=5,type='DEFAULT')
+            if assembly.obj_prompts.pyclone.calculator_index + 1 > len(assembly.obj_prompts.pyclone.calculators):
+                return 
+            
+            calculator = assembly.obj_prompts.pyclone.calculators[assembly.obj_prompts.pyclone.calculator_index]
+
+            if calculator:
+                drivers = pyclone_utils.get_drivers(calculator.distance_obj)
+                if len(drivers) == 0:
+                    box.operator('pc_driver.add_calculator_driver')
+                else:
+                    box.operator('pc_driver.remove_calculator_driver')                
+                for driver in drivers:
+                    pyclone_utils.draw_driver(layout,calculator.distance_obj,driver) 
+
+        if scene_props.driver_tabs == 'SELECTED_OBJECT':
+            obj = context.object
+            if obj:
+                box.label(text="Current Object: " + context.object.name,icon=pc_utils.get_object_icon(obj))
+                drivers = pyclone_utils.get_drivers(obj)
+                for driver in drivers:
+                    pyclone_utils.draw_driver(layout,obj,driver)
+                    
+
 
 class VIEW3D_PT_pc_assembly_properties(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'

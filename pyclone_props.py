@@ -159,6 +159,12 @@ class Prompt(PropertyGroup):
         self.id_data.hide_viewport = True
 
     def set_formula(self,expression,variables):
+        data_path = self.get_data_path()
+        driver = self.id_data.driver_add(data_path)
+        add_driver_variables(driver,variables)
+        driver.driver.expression = expression
+
+    def get_data_path(self):
         prompt_path = 'pyclone.prompts["' + self.name + '"]'
         data_path = ""
         if self.prompt_type == 'FLOAT':
@@ -177,10 +183,7 @@ class Prompt(PropertyGroup):
             data_path = prompt_path + '.combobox_index'
         if self.prompt_type == 'TEXT':
             data_path = prompt_path + '.text_value'
-
-        driver = self.id_data.driver_add(data_path)
-        add_driver_variables(driver,variables)
-        driver.driver.expression = expression
+        return data_path
 
     def draw_prompt_properties(self,layout):
         pass #RENAME PROMPT, #LOCK VALUE,  #IF COMBOBOX THEN COLUMN NUMBER
@@ -217,6 +220,11 @@ class Prompt(PropertyGroup):
 
         if self.prompt_type == 'TEXT':
             row.prop(self,"text_value",text="")
+
+        if allow_edit:
+            props = row.operator('pc_prompts.delete_prompt',text="",icon="X",emboss=False)
+            props.obj_name = self.id_data.name
+            props.prompt_name = self.name
 
 
 class Calculator_Prompt(PropertyGroup):
@@ -305,7 +313,9 @@ class PC_Object_Props(PropertyGroup):
     pointers: bpy.props.CollectionProperty(name="Pointer Slots", type=Pointer_Slot)
     prompts: CollectionProperty(type=Prompt, name="Prompts")
     calculators: CollectionProperty(type=Calculator, name="Calculators")
-    calculator_distance: FloatProperty(name="Calculators",subtype='DISTANCE')
+    calculator_distance: FloatProperty(name="Calculator Distance",subtype='DISTANCE')
+    prompt_index: IntProperty(name="Prompt Index")
+    calculator_index: IntProperty(name="Calculator Index")
 
     def add_prompt(self,prompt_type,prompt_name):
         prompt = self.prompts.add()
@@ -465,6 +475,21 @@ class PC_Scene_Props(PropertyGroup):
                                        ('OBJECTS',"Objects","Show the Objects"),
                                        ('LOGIC',"Logic","Show the Assembly Logic")],
                                 default='MAIN')
+
+    driver_tabs: EnumProperty(name="Driver Tabs",
+                              items=[('LOC_X',"Location X","Show the X Location Driver"),
+                                     ('LOC_Y',"Location Y","Show the Y Location Driver"),
+                                     ('LOC_Z',"Location Z","Show the Z Location Driver"),
+                                     ('ROT_X',"Rotation X","Show the X Rotation Driver"),
+                                     ('ROT_Y',"Rotation Y","Show the Y Rotation Driver"),
+                                     ('ROT_Z',"Rotation Z","Show the Z Rotation Driver"),
+                                     ('DIM_X',"Dimension X","Show the X Dimension Driver"),
+                                     ('DIM_Y',"Dimension Y","Show the Y Dimension Driver"),
+                                     ('DIM_Z',"Dimension Z","Show the Z Dimension Driver"),
+                                     ('PROMPTS',"Prompts","Show the Prompt Drivers"),
+                                     ('CALCULATORS',"Calculators","Show the Calculator Drivers"),
+                                     ('SELECTED_OBJECT',"Selected Object","Show the Drivers for the Selected Object")],
+                              default='SELECTED_OBJECT')
 
     active_library_name: StringProperty(name="Active Library Name",default="")
 

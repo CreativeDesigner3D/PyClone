@@ -135,127 +135,17 @@ class VIEW3D_PT_pc_object_drivers(Panel):
         layout = self.layout
         layout.label(text="",icon='AUTO')
 
-    def draw_driver_expression(self,layout,driver):
-        row = layout.row(align=True)
-        # row.prop(driver.driver,'show_debug_info',text="",icon='DECORATE')
-        if driver.driver.is_valid:
-            row.prop(driver.driver,"expression",text="",expand=True,icon='DECORATE')
-            if driver.mute:
-                row.prop(driver,"mute",text="",icon='DECORATE')
-            else:
-                row.prop(driver,"mute",text="",icon='DECORATE')
-        else:
-            row.prop(driver.driver,"expression",text="",expand=True,icon='ERROR')
-            if driver.mute:
-                row.prop(driver,"mute",text="",icon='DECORATE')
-            else:
-                row.prop(driver,"mute",text="",icon='DECORATE')
-
-    def draw_driver_variable(self,layout,driver,obj):
-        for var in driver.driver.variables:
-            col = layout.column()
-            boxvar = col.box()
-            row = boxvar.row(align=True)
-            row.prop(var,"name",text="",icon='FORWARD')
-            
-            props = row.operator("pc_driver.remove_variable",text="",icon='X',emboss=False)
-            props.object_name = obj.name
-            props.data_path = driver.data_path
-            props.array_index = driver.array_index
-            props.var_name = var.name
-
-            for target in var.targets:
-                if obj.pyclone.show_driver_debug_info:
-                    row = boxvar.row()
-                    row.prop(var,"type",text="")
-                    row = boxvar.row()
-                    row.prop(target,"id",text="")
-                    row = boxvar.row(align=True)
-                    row.prop(target,"data_path",text="",icon='ANIM_DATA')
-
-                if target.id and target.data_path != "":
-                    value = eval('bpy.data.objects["' + target.id.name + '"]'"." + target.data_path)
-                else:
-                    value = "ERROR#"
-                row = boxvar.row()
-                row.alignment = 'CENTER'
-                if type(value).__name__ == 'str':
-                    row.label(text="Value: " + value)
-                elif type(value).__name__ == 'float':
-                    row.label(text="Value: " + str(bpy.utils.units.to_string(bpy.context.scene.unit_settings.system,'LENGTH',value)))
-                elif type(value).__name__ == 'int':
-                    row.label(text="Value: " + str(value))
-                elif type(value).__name__ == 'bool':
-                    row.label(text="Value: " + str(value))       
-
     def draw(self, context):
         layout = self.layout
         obj = context.object
         if obj:
             drivers = pyclone_utils.get_drivers(obj)
 
-            # if not obj.animation_data:
-            #     layout.label(text="There are no drivers assigned to the object",icon='ERROR')
-            # else:
-            #     if len(obj.animation_data.drivers) == 0:
-            #         layout.label(text="There are no drivers assigned to the object",icon='ERROR')
-            #     else:
-            #         layout.prop(obj.ap_props,'show_driver_debug_info')
-
-#FIGURE OUT HOW TO GET DRIVERS FROM DATA
-
             if len(drivers) == 0:
                 layout.label(text="No Drivers Found on Object")
 
             for driver in drivers:
-                box = layout.box()
-                row = box.row()
-                driver_name = driver.data_path
-                if driver_name in {"location","rotation_euler","dimensions" ,"lock_scale",'lock_location','lock_rotation'}:
-                    if driver.array_index == 0:
-                        driver_name = driver_name + " X"
-                    if driver.array_index == 1:
-                        driver_name = driver_name + " Y"
-                    if driver.array_index == 2:
-                        driver_name = driver_name + " Z"    
-                try:
-                    value = eval('bpy.data.objects["' + obj.name + '"].' + driver.data_path)
-                except:
-                    value = eval('bpy.data.objects["' + obj.name + '"].data.' + driver.data_path)
-                if type(value).__name__ == 'str':
-                    row.label(text=driver_name + " = " + str(value),icon='AUTO')
-                elif type(value).__name__ == 'float':
-                    row.label(text=driver_name + " = " + str(value),icon='AUTO')
-                elif type(value).__name__ == 'int':
-                    row.label(text=driver_name + " = " + str(value),icon='AUTO')
-                elif type(value).__name__ == 'bool':
-                    row.label(text=driver_name + " = " + str(value),icon='AUTO')
-                elif type(value).__name__ == 'bpy_prop_array':
-                    row.label(text=driver_name + " = " + str(value[driver.array_index]),icon='AUTO')
-                elif type(value).__name__ == 'Vector':
-                    row.label(text=driver_name + " = " + str(value[driver.array_index]),icon='AUTO')
-                elif type(value).__name__ == 'Euler':
-                    row.label(text=driver_name + " = " + str(value[driver.array_index]),icon='AUTO')
-                else:
-                    row.label(text=driver_name + " = " + str(type(value)),icon='AUTO')
-
-                obj_bp = pc_utils.get_assembly_bp(obj)
-                if obj_bp:
-                    assembly = pc_types.Assembly(obj_bp)
-                    props = row.operator('pc_driver.get_vars_from_object',text="",icon='DRIVER')
-                    props.object_name = obj.name
-                    props.var_object_name = assembly.obj_prompts.name
-                    props.data_path = driver.data_path
-                    props.array_index = driver.array_index
-                else:
-                    props = row.operator('pc_driver.get_vars_from_object',text="",icon='DRIVER')
-                    props.object_name = obj.name
-                    props.var_object_name = obj.name
-                    props.data_path = driver.data_path
-                    props.array_index = driver.array_index
-                
-                self.draw_driver_expression(box,driver)
-                self.draw_driver_variable(box,driver,obj)     
+                pyclone_utils.draw_driver(layout,obj,driver)
 
 classes = (
     VIEW3D_PT_pc_object_prompts,

@@ -255,10 +255,73 @@ class DRIVER_OT_remove_variable(Operator):
                             driver.driver.variables.remove(var)
         return {'FINISHED'}
 
+
+class DRIVER_OT_add_driver(Operator):
+    bl_idname = "pc_driver.add_driver"
+    bl_label = "Add Driver"
+    bl_description = "This adds a driver to a prompt"
+    bl_options = {'UNDO'}
+    
+    def execute(self, context):
+        assembly_bp = pc_utils.get_assembly_bp(context.object)    
+        assembly = pc_types.Assembly(assembly_bp)
+        prompt = assembly.obj_prompts.pyclone.prompts[assembly.obj_prompts.pyclone.prompt_index]
+        assembly.obj_prompts.driver_add(prompt.get_data_path())
+        return {'FINISHED'}
+
+
+class DRIVER_OT_remove_driver(Operator):
+    bl_idname = "pc_driver.remove_driver"
+    bl_label = "Remove Driver"
+    bl_description = "This removes a driver on a prompt"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        assembly_bp = pc_utils.get_assembly_bp(context.object)    
+        assembly = pc_types.Assembly(assembly_bp)
+        prompt = assembly.obj_prompts.pyclone.prompts[assembly.obj_prompts.pyclone.prompt_index]
+        assembly.obj_prompts.driver_remove(prompt.get_data_path())
+        return {'FINISHED'}
+
+
+class DRIVER_OT_add_calculator_driver(Operator):
+    bl_idname = "pc_driver.add_calculator_driver"
+    bl_label = "Add Calculator Driver"
+    bl_description = "This adds a driver to a prompt"
+    bl_options = {'UNDO'}
+    
+    def execute(self, context):
+        assembly_bp = pc_utils.get_assembly_bp(context.object)    
+        assembly = pc_types.Assembly(assembly_bp)
+        calculator = assembly.obj_prompts.pyclone.calculators[assembly.obj_prompts.pyclone.calculator_index]
+        if calculator.distance_obj:
+            calculator.distance_obj.driver_add('pyclone.calculator_distance')
+        return {'FINISHED'}
+
+
+class DRIVER_OT_remove_calculator_driver(Operator):
+    bl_idname = "pc_driver.remove_calculator_driver"
+    bl_label = "Remove Calculator Driver"
+    bl_description = "This removes a driver on a prompt"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        assembly_bp = pc_utils.get_assembly_bp(context.object)    
+        assembly = pc_types.Assembly(assembly_bp)
+        calculator = assembly.obj_prompts.pyclone.calculators[assembly.obj_prompts.pyclone.calculator_index]
+        if calculator.distance_obj:
+            calculator.distance_obj.driver_remove('pyclone.calculator_distance')
+        return {'FINISHED'}
+
+
 classes = (
     PC_prompt_collection,
     DRIVER_OT_get_vars_from_object,
     DRIVER_OT_remove_variable,
+    DRIVER_OT_add_driver,
+    DRIVER_OT_remove_driver,
+    DRIVER_OT_add_calculator_driver,
+    DRIVER_OT_remove_calculator_driver,
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

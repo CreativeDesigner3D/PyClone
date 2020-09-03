@@ -63,6 +63,36 @@ class pc_prompts_OT_add_prompt(Operator):
         row.prop(self,"prompt_type",text="")
 
 
+class pc_prompts_OT_delete_prompt(Operator):
+    bl_idname = "pc_prompts.delete_prompt"
+    bl_label = "Delete Prompt"
+    bl_description = "This deletes the prompt that is passed in with prompt_name"
+    bl_options = {'UNDO'}
+    
+    obj_name: StringProperty(name="Object Name",default="") #WHY DON"T POINTERS WORK?
+    prompt_name: StringProperty(name="Prompt Name",default="New Prompt")
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        obj = bpy.data.objects[self.obj_name]
+        obj.pyclone.delete_prompt(self.prompt_name)
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        if self.obj_name in bpy.data.objects:
+            obj = bpy.data.objects[self.obj_name]
+            wm = context.window_manager
+            return wm.invoke_props_dialog(self, width=380)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Are you sure you want to delete the prompt")
+        layout.label(text=self.prompt_name)
+
+
 class pc_prompts_OT_add_calculator(Operator):
     bl_idname = "pc_prompts.add_calculator"
     bl_label = "Add Calculator"
@@ -336,6 +366,7 @@ class pc_prompts_OT_delete_comboxbox_value(Operator):
 
 classes = (
     pc_prompts_OT_add_prompt,
+    pc_prompts_OT_delete_prompt,
     pc_prompts_OT_add_calculator,
     pc_prompts_OT_add_calculator_prompt,
     pc_prompts_OT_edit_calculator,
