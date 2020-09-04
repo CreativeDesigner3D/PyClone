@@ -96,6 +96,8 @@ class VIEW3D_PT_pc_object_material_pointers(Panel):
             if len(obj.pyclone.pointers) >= obj.active_material_index + 1:
                 pointer_slot = obj.pyclone.pointers[obj.active_material_index]
                 row.prop(pointer_slot,'name')
+                row = layout.row()
+                row.prop(pointer_slot,'pointer_name')
             else:
                 row.operator('pc_material.add_material_pointers').object_name = obj.name
 

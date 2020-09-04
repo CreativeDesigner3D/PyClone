@@ -81,7 +81,7 @@ class Library(bpy.types.PropertyGroup):
 
 
 class Pointer_Slot(bpy.types.PropertyGroup):
-    pass
+    pointer_name: StringProperty(name="Pointer Name", description="")
 
 
 class Prompt(PropertyGroup):
