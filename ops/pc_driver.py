@@ -71,7 +71,6 @@ class DRIVER_OT_get_vars_from_object(Operator):
         for DR in drivers:
             if self.data_path in DR.data_path and DR.array_index == self.array_index:
                 # DR.driver.show_debug_info = False
-                
                 if self.x_loc:
                     var = DR.driver.variables.new()
                     var.name = 'loc_x'
@@ -198,7 +197,8 @@ class DRIVER_OT_get_vars_from_object(Operator):
     def invoke(self,context,event):
         self.reset_variables()
         self.obj = bpy.data.objects[self.object_name]
-        obj_bp = pc_utils.get_assembly_bp(self.obj)
+        var_obj = bpy.data.objects[self.var_object_name]
+        obj_bp = pc_utils.get_assembly_bp(var_obj)
         if obj_bp:
             self.assembly = pc_types.Assembly(obj_bp)
         self.get_prompts()

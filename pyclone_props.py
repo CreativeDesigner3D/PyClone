@@ -491,6 +491,8 @@ class PC_Scene_Props(PropertyGroup):
                                      ('SELECTED_OBJECT',"Selected Object","Show the Drivers for the Selected Object")],
                               default='SELECTED_OBJECT')
 
+    driver_override_object: PointerProperty(name="Active Library Name",type=bpy.types.Object)
+
     active_library_name: StringProperty(name="Active Library Name",default="")
 
     @classmethod

@@ -23,6 +23,8 @@ def get_drivers(obj):
     return drivers            
 
 def draw_driver(layout,obj,driver):
+    props = get_scene_props(bpy.context.scene)
+
     box = layout.box()
     row = box.row()
     driver_name = driver.data_path
@@ -54,16 +56,28 @@ def draw_driver(layout,obj,driver):
     else:
         row.label(text=driver_name + " = " + str(type(value)),icon='AUTO')
 
+    box = layout.box()
+    row = box.row()
+    row.prop(props,'driver_override_object',text="Vars",icon='DRIVER')
     obj_bp = pc_utils.get_assembly_bp(obj)
-    if obj_bp:
+    if props.driver_override_object:
+        override_obj_bp = pc_utils.get_assembly_bp(props.driver_override_object)
+        assembly = pc_types.Assembly(override_obj_bp)
+        if assembly.obj_prompts:
+            props = row.operator('pc_driver.get_vars_from_object',text=override_obj_bp.name,icon='DRIVER')
+            props.object_name = obj.name
+            props.var_object_name = assembly.obj_prompts.name
+            props.data_path = driver.data_path
+            props.array_index = driver.array_index    
+    elif obj_bp:
         assembly = pc_types.Assembly(obj_bp)
-        props = row.operator('pc_driver.get_vars_from_object',text="",icon='DRIVER')
+        props = row.operator('pc_driver.get_vars_from_object',text=assembly.obj_bp.name,icon='DRIVER')
         props.object_name = obj.name
         props.var_object_name = assembly.obj_prompts.name
         props.data_path = driver.data_path
         props.array_index = driver.array_index
     else:
-        props = row.operator('pc_driver.get_vars_from_object',text="",icon='DRIVER')
+        props = row.operator('pc_driver.get_vars_from_object',text=obj.name,icon='DRIVER')
         props.object_name = obj.name
         props.var_object_name = obj.name
         props.data_path = driver.data_path
