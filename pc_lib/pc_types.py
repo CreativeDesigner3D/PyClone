@@ -9,6 +9,7 @@ class Assembly:
     obj_y = None
     obj_z = None
     obj_prompts = None
+    prompts = {}
 
     def __init__(self,obj_bp=None,filepath=""):
         if obj_bp:
@@ -38,7 +39,7 @@ class Assembly:
                 if "obj_y" in obj and obj["obj_y"] == True:
                     self.obj_y = obj
                 if "obj_z" in obj and obj["obj_z"] == True:
-                    self.obj_bp = obj
+                    self.obj_z = obj
                 if "obj_prompts" in obj and obj["obj_prompts"] == True:
                     self.obj_prompts = obj
                 
@@ -229,6 +230,19 @@ class Assembly:
     def get_calculator(self,name):
         if name in self.obj_prompts.pyclone.calculators:
             return self.obj_prompts.pyclone.calculators[name]
+
+    def set_prompts(self):
+        for key in self.prompts:
+            if key in self.obj_prompts.pyclone.prompts:
+                if key in self.obj_prompts.pyclone.prompts:
+                    prompt = self.obj_prompts.pyclone.prompts[key]
+                    prompt.set_value(self.prompts[key])
+
+    def get_prompt_dict(self):
+        prompt_dict = {}
+        for prompt in self.obj_prompts.pyclone.prompts:
+            prompt_dict[prompt.name] = prompt.get_value()
+        return prompt_dict
 
     def loc_x(self,expression="",variables=[],value=0):
         if expression == "":
