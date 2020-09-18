@@ -24,8 +24,8 @@ def get_drivers(obj):
 
 def draw_driver(layout,obj,driver):
     props = get_scene_props(bpy.context.scene)
-
-    box = layout.box()
+    col = layout.column(align=True)
+    box = col.box()
     row = box.row()
     driver_name = driver.data_path
     if driver_name in {"location","rotation_euler","dimensions" ,"lock_scale",'lock_location','lock_rotation'}:
@@ -56,9 +56,25 @@ def draw_driver(layout,obj,driver):
     else:
         row.label(text=driver_name + " = " + str(type(value)),icon='AUTO')
 
-    box = layout.box()
+    row = box.row(align=True)
+    if driver.driver.is_valid:
+        row.prop(driver.driver,"expression",text="",expand=True,icon='DECORATE')
+        if driver.mute:
+            row.prop(driver,"mute",text="",icon='DECORATE')
+        else:
+            row.prop(driver,"mute",text="",icon='DECORATE')
+    else:
+        row.prop(driver.driver,"expression",text="",expand=True,icon='ERROR')
+        if driver.mute:
+            row.prop(driver,"mute",text="",icon='DECORATE')
+        else:
+            row.prop(driver,"mute",text="",icon='DECORATE') 
+
+    box = col.box()
     row = box.row()
-    row.prop(props,'driver_override_object',text="Vars",icon='DRIVER')
+    row.label(text="Formula Variables:")
+    row = box.row()
+    row.prop(props,'driver_override_object',text="",icon='DRIVER')
     obj_bp = pc_utils.get_assembly_bp(obj)
     if props.driver_override_object:
         override_obj_bp = pc_utils.get_assembly_bp(props.driver_override_object)
@@ -83,19 +99,7 @@ def draw_driver(layout,obj,driver):
         props.data_path = driver.data_path
         props.array_index = driver.array_index
 
-    row = box.row(align=True)
-    if driver.driver.is_valid:
-        row.prop(driver.driver,"expression",text="",expand=True,icon='DECORATE')
-        if driver.mute:
-            row.prop(driver,"mute",text="",icon='DECORATE')
-        else:
-            row.prop(driver,"mute",text="",icon='DECORATE')
-    else:
-        row.prop(driver.driver,"expression",text="",expand=True,icon='ERROR')
-        if driver.mute:
-            row.prop(driver,"mute",text="",icon='DECORATE')
-        else:
-            row.prop(driver,"mute",text="",icon='DECORATE') 
+
 
     draw_driver_variables(box,obj,driver)   
 
