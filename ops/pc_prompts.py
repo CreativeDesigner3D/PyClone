@@ -109,7 +109,11 @@ class pc_prompts_OT_add_calculator(Operator):
         return True
 
     def execute(self, context):     
-        self.obj.pyclone.add_calculator(self.calculator_name)
+        calc_distance_obj = bpy.data.objects.new('Calc Distance Obj',None)
+        calc_distance_obj.empty_display_size = .001        
+        calc_distance_obj.parent = self.obj.parent
+        context.view_layer.active_layer_collection.collection.objects.link(calc_distance_obj)
+        self.obj.pyclone.add_calculator(self.calculator_name,calc_distance_obj)
         context.area.tag_redraw()
         return {'FINISHED'}
 
