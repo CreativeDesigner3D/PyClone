@@ -125,9 +125,15 @@ class pc_assembly_OT_add_object(Operator):
             bpy.ops.object.editmode_toggle()
 
         if self.object_type == 'CURVE':
-            pass #TODO:
+            curve = bpy.data.curves.new("Curve",'CURVE')
+            obj_curve = bpy.data.objects.new("Curve",curve)
+            spline = obj_curve.data.splines.new('BEZIER')
+            spline.bezier_points.add(count=1)                 
+            obj_curve.data.splines[0].bezier_points[0].co = (0,0,0)
+            obj_curve.data.splines[0].bezier_points[1].co = (assembly.obj_x.location.x,0,0)
+            assembly.add_object(obj_curve)
         if self.object_type == 'LIGHT':
-            pass #TODO:
+            assembly.add_light('Light','POINT')
         return {'FINISHED'}
 
     def invoke(self,context,event):
