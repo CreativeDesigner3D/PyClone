@@ -1,8 +1,10 @@
 import bpy
+import math
 from ..pc_lib import pc_types, pc_utils
 from .. import pyclone_utils
 
 def draw_assembly_properties(context, layout, assembly):
+    unit_system = context.scene.unit_settings.system
     scene_props = pyclone_utils.get_scene_props(context.scene)
 
     col = layout.column(align=True)
@@ -19,9 +21,36 @@ def draw_assembly_properties(context, layout, assembly):
 
         col = box.column(align=True)
         col.label(text="Dimensions:")
-        col.prop(assembly.obj_x,'location',index=0,text="X")
-        col.prop(assembly.obj_y,'location',index=1,text="Y")
-        col.prop(assembly.obj_z,'location',index=2,text="Z")
+
+        row1 = col.row(align=True)
+        row1.prop(assembly.obj_x,'lock_location',index=0,text="")
+        if assembly.obj_x.lock_location[0]:
+            x = math.fabs(assembly.obj_x.location.x)
+            value = str(bpy.utils.units.to_string(unit_system,'LENGTH',x))                 
+            row1.label(text='X: ' + value)
+        else:
+            row1.prop(assembly.obj_x,'location',index=0,text="X")
+            row1.prop(assembly.obj_x,'hide_viewport',text="")
+
+        row1 = col.row(align=True)
+        row1.prop(assembly.obj_y,'lock_location',index=1,text="")  
+        if assembly.obj_y.lock_location[1]:
+            y = math.fabs(assembly.obj_y.location.y)
+            value = str(bpy.utils.units.to_string(unit_system,'LENGTH',y))                 
+            row1.label(text='Y: ' + value)
+        else:
+            row1.prop(assembly.obj_y,'location',index=1,text="Y")
+            row1.prop(assembly.obj_y,'hide_viewport',text="")
+
+        row1 = col.row(align=True)
+        row1.prop(assembly.obj_z,'lock_location',index=2,text="")              
+        if assembly.obj_z.lock_location[2]:
+            z = math.fabs(assembly.obj_z.location.z)
+            value = str(bpy.utils.units.to_string(unit_system,'LENGTH',z))                 
+            row1.label(text='Z: ' + value)
+        else:
+            row1.prop(assembly.obj_z,'location',index=2,text="Z")      
+            row1.prop(assembly.obj_z,'hide_viewport',text="")                  
 
         col = box.column()
         s_col = col.split()
