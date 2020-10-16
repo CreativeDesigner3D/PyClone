@@ -1,7 +1,109 @@
 import bpy
 import math
-from ..pc_lib import pc_types, pc_utils
+from ..pc_lib import pc_types, pc_utils, pc_unit
 from .. import pyclone_utils
+
+def draw_object_transform(context,layout,obj):
+    if obj.type not in {'EMPTY','CAMERA','LIGHT'}:
+        if obj.scale.x != 1 or obj.scale.y != 1 or obj.scale.z != 1:
+            props = layout.operator('object.transform_apply',text="Apply Scale",icon='ERROR')
+            props.location = False
+            props.rotation = False
+            props.scale = True
+
+        col = layout.column(align=True)
+        col.label(text='Dimensions:')
+        #X
+        row = col.row(align=True)
+        row.prop(obj,"lock_scale",index=0,text="")
+        if obj.lock_scale[0]:
+            row.label(text="X: " + str(round(pc_unit.meter_to_active_unit(obj.dimensions.x),4)))
+        else:
+            row.prop(obj,"dimensions",index=0,text="X")
+        #Y
+        row = col.row(align=True)
+        row.prop(obj,"lock_scale",index=1,text="")
+        if obj.lock_scale[1]:
+            row.label(text="Y: " + str(round(pc_unit.meter_to_active_unit(obj.dimensions.y),4)))
+        else:
+            row.prop(obj,"dimensions",index=1,text="Y")
+        #Z
+        row = col.row(align=True)
+        row.prop(obj,"lock_scale",index=2,text="")
+        if obj.lock_scale[2]:
+            row.label(text="Z: " + str(round(pc_unit.meter_to_active_unit(obj.dimensions.z),4)))
+        else:
+            row.prop(obj,"dimensions",index=2,text="Z")
+
+    if obj.type == 'CAMERA':
+        cam = obj.data
+        row = layout.row()
+        row.label(text="Size:")
+        row.prop(cam, "display_size", text="")
+
+    if obj.type == 'EMPTY':
+        row = layout.row()
+        row.label(text="Size:")            
+        row.prop(obj, "empty_display_size", text="")            
+
+    col1 = layout.row()
+    col2 = col1.split()
+    col = col2.column(align=True)
+    col.label(text='Location:')
+    #X
+    row = col.row(align=True)
+    row.prop(obj,"lock_location",index=0,text="")
+    if obj.lock_location[0]:
+        row.label(text="X: " + str(round(pc_unit.meter_to_active_unit(obj.location.x),4)))
+    else:
+        row.prop(obj,"location",index=0,text="X")
+    #Y    
+    row = col.row(align=True)
+    row.prop(obj,"lock_location",index=1,text="")
+    if obj.lock_location[1]:
+        row.label(text="Y: " + str(round(pc_unit.meter_to_active_unit(obj.location.y),4)))
+    else:
+        row.prop(obj,"location",index=1,text="Y")
+    #Z    
+    row = col.row(align=True)
+    row.prop(obj,"lock_location",index=2,text="")
+    if obj.lock_location[2]:
+        row.label(text="Z: " + str(round(pc_unit.meter_to_active_unit(obj.location.z),4)))
+    else:
+        row.prop(obj,"location",index=2,text="Z")
+        
+    col2 = col1.split()
+    col = col2.column(align=True)
+    col.label(text='Rotation:')
+    #X
+    row = col.row(align=True)
+    row.prop(obj,"lock_rotation",index=0,text="")
+    if obj.lock_rotation[0]:
+        row.label(text="X: " + str(round(math.degrees(obj.rotation_euler.x),4)))
+    else:
+        row.prop(obj,"rotation_euler",index=0,text="X")
+    #Y    
+    row = col.row(align=True)
+    row.prop(obj,"lock_rotation",index=1,text="")
+    if obj.lock_rotation[1]:
+        row.label(text="Y: " + str(round(math.degrees(obj.rotation_euler.y),4)))
+    else:
+        row.prop(obj,"rotation_euler",index=1,text="Y")
+    #Z    
+    row = col.row(align=True)
+    row.prop(obj,"lock_rotation",index=2,text="")
+    if obj.lock_rotation[2]:
+        row.label(text="Y: " + str(round(math.degrees(obj.rotation_euler.z),4)))
+    else:
+        row.prop(obj,"rotation_euler",index=2,text="Z")
+
+def draw_object_view_properties(context,layout,obj):
+    row = layout.row()
+    row.prop(obj,'display_type',expand=True)
+    row = layout.row()
+    # row.prop(obj,'hide_select')
+    row.prop(obj,'hide_viewport')
+    row.prop(obj,'hide_render')        
 
 def draw_assembly_properties(context, layout, assembly):
     unit_system = context.scene.unit_settings.system
@@ -65,6 +167,7 @@ def draw_assembly_properties(context, layout, assembly):
         skip_names = {assembly.obj_bp.name,assembly.obj_x.name,assembly.obj_y.name,assembly.obj_z.name,assembly.obj_prompts.name}
 
         row = box.row()
+        row.scale_y = 1.3
         row.label(text="Objects",icon='OUTLINER_OB_MESH')
         row.operator('pc_assembly.add_object',text="Add Object",icon='ADD')
 
@@ -72,6 +175,9 @@ def draw_assembly_properties(context, layout, assembly):
 
         for child in assembly.obj_bp.children:
             if child.name not in skip_names:
+                if context.mode == 'EDIT_MESH' and child != context.active_object:
+                    continue
+
                 row = mesh_col.row(align=True)
                 if child == context.object:
                     row.label(text="",icon='RADIOBUT_ON')
@@ -80,10 +186,65 @@ def draw_assembly_properties(context, layout, assembly):
                 else:
                     row.label(text="",icon='RADIOBUT_OFF')
                 row.operator('pc_object.select_object',text=child.name,icon=pc_utils.get_object_icon(child)).obj_name = child.name
+                row.prop(child.pyclone,'show_object_props',text="",icon='SETTINGS')
+                if child.pyclone.show_object_props:
+                    mesh_col.separator()
+                    mesh_col.prop(child,'name')
+                    mesh_col.separator()
+                    draw_object_transform(context,mesh_col,child)
+                    mesh_col.separator()
+                    draw_object_view_properties(context,mesh_col,child)
+                    mesh_col.separator()
+
+                if child.mode == 'EDIT':
+                    box = col.box()
+                    box.label(text="Edit Mode Options",icon='EDITMODE_HLT')
+                    vcol = box.column(align=True)
+                    for vgroup in child.vertex_groups:
+                        count = 0
+                        for vert in context.active_object.data.vertices:
+                            for group in vert.groups:
+                                if group.group == vgroup.index:
+                                    count += 1
+                        vcol.operator('pc_object.assign_verties_to_vertex_group',text="Assign to - " + vgroup.name + " (" + str(count) + ")").vertex_group_name = vgroup.name
+                    vcol.separator()
+                    vcol.operator('pc_assembly.connect_meshes_to_hooks_in_assembly',text='Connect Hooks',icon='HOOK').obj_name = context.active_object.name
+                    vcol.operator('pc_object.clear_vertex_groups',text='Clear All Vertex Group Assignments',icon='X').obj_name = context.active_object.name     
+
+                    box = col.box()
+                    box.label(text="Material Assignment Options",icon='MATERIAL_DATA')     
+                      
+                    # box = col.box()
+                    row = box.row()
+                    row.template_list("MATERIAL_UL_matslots", "", child, "material_slots", child, "active_material_index", rows=3)
+
+                    col = row.column(align=True)
+                    col.operator("pc_material.add_material_slot", icon='ADD', text="").object_name = child.name
+                    col.operator("object.material_slot_remove", icon='REMOVE', text="")
+
+                    slot = None
+                    if len(child.material_slots) >= child.active_material_index + 1:
+                        slot = child.material_slots[child.active_material_index]
+
+                    if slot:
+                        row = box.row()
+                        if len(child.pyclone.pointers) >= child.active_material_index + 1:
+                            pointer_slot = child.pyclone.pointers[child.active_material_index]
+                            row.prop(pointer_slot,'name')
+                            row = box.row()
+                            row.prop(pointer_slot,'pointer_name',text="Pointer")
+                        else:
+                            row.operator('pc_material.add_material_pointers').object_name = child.name
+
+                    row = box.row(align=True)
+                    row.operator("object.material_slot_assign", text="Assign")
+                    row.operator("object.material_slot_select", text="Select")
+                    row.operator("object.material_slot_deselect", text="Deselect")     
 
     if scene_props.assembly_tabs == 'LOGIC':
-        
-        box.prop(scene_props,'driver_tabs',text='')
+        row = box.row()
+        row.scale_y = 1.3
+        row.prop(scene_props,'driver_tabs',text='')
         if scene_props.driver_tabs == 'LOC_X':
             box.prop(assembly.obj_bp,'location',index=0,text="Location X")
             drivers = pyclone_utils.get_drivers(assembly.obj_bp)
