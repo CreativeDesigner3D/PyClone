@@ -379,8 +379,40 @@ class VIEW3D_PT_pc_assembly_properties(bpy.types.Panel):
         assembly = pc_types.Assembly(assembly_bp)   
         draw_assembly_properties(context,layout,assembly)     
 
+
+class pc_assembly_OT_show_properties(bpy.types.Operator):
+    bl_idname = "pc_assembly.show_properties"
+    bl_label = "Assembly Properties"
+    bl_description = "This show the assembly properties"
+    bl_options = {'UNDO'}
+
+    assembly = None
+
+    def check(self, context):
+        for child in self.assembly.obj_bp.children:
+            child["PROMPT_ID"] = self.assembly.obj_bp["PROMPT_ID"]
+        return True
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        assembly_bp = pc_utils.get_assembly_bp(context.object)
+        self.assembly = pc_types.Assembly(assembly_bp)  
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        draw_assembly_properties(context,layout,self.assembly)  
+
 classes = (
     VIEW3D_PT_pc_assembly_properties,
+    pc_assembly_OT_show_properties,
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

@@ -37,6 +37,7 @@ class pc_assembly_OT_create_new_assembly(Operator):
         assembly.obj_y.location.y = 1
         assembly.obj_z.location.z = 1
         assembly.obj_bp.select_set(True)
+        assembly.obj_bp["PROMPT_ID"] = "pc_assembly.show_properties"
         context.view_layer.objects.active = assembly.obj_bp
         return {'FINISHED'}
 
