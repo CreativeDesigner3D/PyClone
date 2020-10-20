@@ -98,12 +98,133 @@ def draw_object_transform(context,layout,obj):
         row.prop(obj,"rotation_euler",index=2,text="Z")
 
 def draw_object_view_properties(context,layout,obj):
-    row = layout.row()
+    col = layout.column(align=True)
+    col.label(text="View Options:")
+    row = col.row()
     row.prop(obj,'display_type',expand=True)
-    row = layout.row()
+    row = col.row()
     # row.prop(obj,'hide_select')
     row.prop(obj,'hide_viewport')
     row.prop(obj,'hide_render')        
+
+def draw_curve_properties(context,layout,obj):
+    layout.label(text="Curve Options:")
+    curve = obj.data
+    row = layout.row()
+    row.label(text="Type")
+    row.prop(curve, "dimensions", expand=True)
+
+    row = layout.row(align=True)
+    row.label(text="Resolution")
+    row.prop(curve, "resolution_u", text="Preview")
+    row.prop(curve, "render_resolution_u", text="Render")  
+
+    # layout.label(text="Geometry")    
+    row = layout.row()
+    row.label(text="Extrude")    
+    row.prop(curve, "extrude",text="")
+    row = layout.row()
+    row.label(text="Offset")           
+    row.prop(curve, "offset",text="")
+
+    row = layout.row(align=True)
+    row.label(text="Bevel")
+    row.prop(curve, "bevel_depth", text="Depth")
+    row.prop(curve, "bevel_resolution", text="Resolution")
+
+    row = layout.row(align=True)
+    row.label(text="Start/End")
+    row.prop(curve, "bevel_factor_start", text="Start")
+    row.prop(curve, "bevel_factor_end", text="End")
+
+    row = layout.split(factor=0.5)
+    row.label(text="Taper Object")
+    row.prop(curve, "taper_object",text="")
+
+    row = layout.split(factor=0.5)
+    row.label(text="Bevel Object")        
+    row.prop(curve, "bevel_object", text="")
+
+    if curve.bevel_object is not None:
+        row = layout.row()
+        row.alignment = 'RIGHT'
+        row.prop(curve, "use_fill_caps")
+
+    row = layout.row()
+    row.label(text="Fill Mode")
+    row.prop(curve, "fill_mode",expand=True)
+    row = layout.row()
+    row.alignment = 'RIGHT'
+    row.prop(curve, "use_fill_deform")
+
+def draw_object_properties(context,layout,obj):
+    # row = layout.row(align=True)
+    # row.prop(obj.pyclone,'object_tabs',expand=True)
+
+    if obj.pyclone.object_tabs == 'MAIN':
+        layout.prop(obj,'name')
+        draw_object_transform(context,layout,obj)
+        draw_object_view_properties(context,layout,obj)
+
+
+    if obj.pyclone.object_tabs == 'DATA':
+        if obj.type == 'MESH':
+            layout.label(text="Edit Mode Options",icon='EDITMODE_HLT')
+            if obj.mode == 'EDIT':
+                layout.operator('pc_object.toggle_edit_mode',text="Exit Edit Mode",icon='X').obj_name = obj.name
+                vcol = layout.column(align=True)
+                for vgroup in obj.vertex_groups:
+                    count = 0
+                    for vert in context.active_object.data.vertices:
+                        for group in vert.groups:
+                            if group.group == vgroup.index:
+                                count += 1
+                    vcol.operator('pc_object.assign_verties_to_vertex_group',text="Assign to - " + vgroup.name + " (" + str(count) + ")").vertex_group_name = vgroup.name
+                vcol.separator()
+                vcol.operator('pc_assembly.connect_meshes_to_hooks_in_assembly',text='Connect Hooks',icon='HOOK').obj_name = context.active_object.name
+                vcol.operator('pc_object.clear_vertex_groups',text='Clear All Vertex Group Assignments',icon='X').obj_name = context.active_object.name   
+            else:
+                layout.operator('pc_object.toggle_edit_mode',text="Enter Edit Mode",icon='EDITMODE_HLT').obj_name = obj.name
+        
+        if obj.type == 'CURVE':
+            layout.label(text="Edit Mode Options",icon='EDITMODE_HLT')
+            if obj.mode == 'EDIT':
+                layout.operator('pc_object.toggle_edit_mode',text="Exit Edit Mode",icon='X').obj_name = obj.name
+                layout.operator('object.hook_add_selob',text="Hook to Selected Object",icon='HOOK').use_bone = False
+            else:
+                layout.operator('pc_object.toggle_edit_mode',text="Enter Edit Mode",icon='EDITMODE_HLT').obj_name = obj.name
+                draw_curve_properties(context,layout,obj)
+
+    if obj.pyclone.object_tabs == 'MATERIAL':
+
+        layout.label(text="Material Assignment Options",icon='MATERIAL_DATA')     
+
+        row = layout.row()
+        row.template_list("MATERIAL_UL_matslots", "", obj, "material_slots", obj, "active_material_index", rows=3)
+
+        col = row.column(align=True)
+        col.operator("pc_material.add_material_slot", icon='ADD', text="").object_name = obj.name
+        col.operator("object.material_slot_remove", icon='REMOVE', text="")
+
+        slot = None
+        if len(obj.material_slots) >= obj.active_material_index + 1:
+            slot = obj.material_slots[obj.active_material_index]
+
+        if slot:
+            row = layout.row()
+            if len(obj.pyclone.pointers) >= obj.active_material_index + 1:
+                pointer_slot = obj.pyclone.pointers[obj.active_material_index]
+                row.prop(pointer_slot,'name')
+                row = layout.row()
+                row.prop(pointer_slot,'pointer_name',text="Pointer")
+            else:
+                row.operator('pc_material.add_material_pointers').object_name = obj.name
+
+        if obj.mode == 'EDIT':
+            row = layout.row(align=True)
+            row.operator("object.material_slot_assign", text="Assign")
+            row.operator("object.material_slot_select", text="Select")
+            row.operator("object.material_slot_deselect", text="Deselect")  
 
 def draw_assembly_properties(context, layout, assembly):
     unit_system = context.scene.unit_settings.system
@@ -175,8 +296,8 @@ def draw_assembly_properties(context, layout, assembly):
 
         for child in assembly.obj_bp.children:
             if child.name not in skip_names:
-                if context.mode == 'EDIT_MESH' and child != context.active_object:
-                    continue
+                # if context.mode == 'EDIT_MESH' and child != context.active_object:
+                #     continue
 
                 row = mesh_col.row(align=True)
                 if child == context.object:
@@ -186,61 +307,17 @@ def draw_assembly_properties(context, layout, assembly):
                 else:
                     row.label(text="",icon='RADIOBUT_OFF')
                 row.operator('pc_object.select_object',text=child.name,icon=pc_utils.get_object_icon(child)).obj_name = child.name
-                row.prop(child.pyclone,'show_object_props',text="",icon='SETTINGS')
+                row.prop(child.pyclone,'show_object_props',text="",icon='DISCLOSURE_TRI_DOWN' if child.pyclone.show_object_props else 'DISCLOSURE_TRI_RIGHT')
                 if child.pyclone.show_object_props:
-                    mesh_col.separator()
-                    mesh_col.prop(child,'name')
-                    mesh_col.separator()
-                    draw_object_transform(context,mesh_col,child)
-                    mesh_col.separator()
-                    draw_object_view_properties(context,mesh_col,child)
-                    mesh_col.separator()
-
-                if child.mode == 'EDIT':
-                    box = col.box()
-                    box.label(text="Edit Mode Options",icon='EDITMODE_HLT')
-                    vcol = box.column(align=True)
-                    for vgroup in child.vertex_groups:
-                        count = 0
-                        for vert in context.active_object.data.vertices:
-                            for group in vert.groups:
-                                if group.group == vgroup.index:
-                                    count += 1
-                        vcol.operator('pc_object.assign_verties_to_vertex_group',text="Assign to - " + vgroup.name + " (" + str(count) + ")").vertex_group_name = vgroup.name
-                    vcol.separator()
-                    vcol.operator('pc_assembly.connect_meshes_to_hooks_in_assembly',text='Connect Hooks',icon='HOOK').obj_name = context.active_object.name
-                    vcol.operator('pc_object.clear_vertex_groups',text='Clear All Vertex Group Assignments',icon='X').obj_name = context.active_object.name     
-
-                    box = col.box()
-                    box.label(text="Material Assignment Options",icon='MATERIAL_DATA')     
-                      
-                    # box = col.box()
-                    row = box.row()
-                    row.template_list("MATERIAL_UL_matslots", "", child, "material_slots", child, "active_material_index", rows=3)
-
+                    row = mesh_col.row()
+                    row.label(text="",icon='BLANK1')
                     col = row.column(align=True)
-                    col.operator("pc_material.add_material_slot", icon='ADD', text="").object_name = child.name
-                    col.operator("object.material_slot_remove", icon='REMOVE', text="")
-
-                    slot = None
-                    if len(child.material_slots) >= child.active_material_index + 1:
-                        slot = child.material_slots[child.active_material_index]
-
-                    if slot:
-                        row = box.row()
-                        if len(child.pyclone.pointers) >= child.active_material_index + 1:
-                            pointer_slot = child.pyclone.pointers[child.active_material_index]
-                            row.prop(pointer_slot,'name')
-                            row = box.row()
-                            row.prop(pointer_slot,'pointer_name',text="Pointer")
-                        else:
-                            row.operator('pc_material.add_material_pointers').object_name = child.name
-
-                    row = box.row(align=True)
-                    row.operator("object.material_slot_assign", text="Assign")
-                    row.operator("object.material_slot_select", text="Select")
-                    row.operator("object.material_slot_deselect", text="Deselect")     
-
+                    box = col.box()
+                    row = box.row()
+                    row.prop(child.pyclone,'object_tabs',expand=True)
+                    box = col.box()
+                    draw_object_properties(context,box,child)
+                   
     if scene_props.assembly_tabs == 'LOGIC':
         row = box.row()
         row.scale_y = 1.3

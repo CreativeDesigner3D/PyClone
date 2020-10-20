@@ -310,6 +310,11 @@ class Calculator(PropertyGroup):
 
 class PC_Object_Props(PropertyGroup):
     show_object_props: BoolProperty(name="Show Object Props", default=False)
+    object_tabs: EnumProperty(name="Object Tabs",
+                              items=[('MAIN',"Main","Show the Main Properties"),
+                                     ('DATA',"Data","Show the Data"),
+                                     ('MATERIAL',"Material","Show the Materials")],
+                              default='MAIN')
     show_driver_debug_info: BoolProperty(name="Show Driver Debug Info", default=False)
     pointers: bpy.props.CollectionProperty(name="Pointer Slots", type=Pointer_Slot)
     prompts: CollectionProperty(type=Prompt, name="Prompts")
