@@ -250,12 +250,11 @@ def get_selection_point(context, event, ray_max=10000.0,objects=None,floor=None,
     region = context.region
     rv3d = context.region_data
     coord = event.mouse_region_x, event.mouse_region_y
-
     # get the ray from the viewport and mouse
     view_vector = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
     ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
     ray_target = ray_origin + view_vector
- 
+
     def visible_objects_and_duplis():
         """Loop over (object, matrix) pairs (mesh only)"""
  
@@ -270,19 +269,9 @@ def get_selection_point(context, event, ray_max=10000.0,objects=None,floor=None,
                     if floor is not None and obj == floor:
                         yield (obj, obj.matrix_world.copy())
                          
-    #                 if obj.draw_type != 'WIRE':
                     if obj.type == 'MESH' and obj.hide_select == False:
                         yield (obj, obj.matrix_world.copy())
     
-                    if obj.instance_type != 'NONE':
-                        obj.dupli_list_create(scene)
-                        for dob in obj.dupli_list:
-                            obj_dupli = dob.object
-                            if obj_dupli.type == 'MESH':
-                                yield (obj_dupli, dob.matrix.copy())
- 
-            # obj.dupli_list_clear()
- 
     def obj_ray_cast(obj, matrix):
         """Wrapper for ray casting that moves the ray into object space"""
         try:
@@ -294,7 +283,6 @@ def get_selection_point(context, event, ray_max=10000.0,objects=None,floor=None,
      
             # cast the ray
             success, location, normal, face_index = obj.ray_cast(ray_origin_obj, ray_direction_obj)
-     
             if success:
                 return location, normal, face_index
             else:
@@ -309,6 +297,7 @@ def get_selection_point(context, event, ray_max=10000.0,objects=None,floor=None,
     for obj, matrix in visible_objects_and_duplis():
         if obj.type == 'MESH':
             if obj.data:
+                
                 hit, normal, face_index = obj_ray_cast(obj, matrix)
                 if hit is not None:
                     hit_world = matrix @ hit
