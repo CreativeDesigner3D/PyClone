@@ -1,8 +1,8 @@
 bl_info = {
     "name": "PyClone",
     "author": "Andrew Peel",
-    "version": (0, 0, 2),
-    "blender": (2, 83, 0),
+    "version": (0, 2, 0),
+    "blender": (2, 91, 0),
     "location": "3D Viewport Sidebar and File Browser",
     "description": "This is an asset management and development engine",
     "warning": "",
