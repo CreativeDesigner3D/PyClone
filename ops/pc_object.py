@@ -104,6 +104,22 @@ class pc_object_OT_assign_verties_to_vertex_group(Operator):
 
         return{'FINISHED'}
 
+class pc_object_OT_apply_modifiers_and_drivers(Operator):
+    bl_idname = "pc_object.apply_modifiers_and_drivers"
+    bl_label = "Apply Modifiers and Drivers"
+    bl_description = "This will apply all of the modifiers and drivers in the scene"
+    bl_options = {'UNDO'}
+    
+    def execute(self,context):
+
+        for obj in bpy.data.objects:
+            pass
+            for mod in obj.modifiers:
+                if mod.type == 'HOOK':
+                    pass #apply modifier
+
+        return{'FINISHED'}
+
 classes = (
     pc_object_OT_select_object,
     pc_object_OT_toggle_edit_mode,
