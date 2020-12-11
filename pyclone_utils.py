@@ -1,4 +1,5 @@
 import bpy
+import os
 from .pc_lib import pc_utils, pc_types
 
 def get_wm_props(window_manager):
@@ -158,3 +159,11 @@ def update_file_browser_path(context,path):
                         params.use_filter_folder = False
                         params.use_filter_blender = False
                         params.use_filter_image = True    
+
+def get_file_browser_path(context):
+    for area in context.screen.areas:
+        if area.type == 'FILE_BROWSER':
+            for space in area.spaces:
+                if space.type == 'FILE_BROWSER':
+                    params = space.params     
+                    return os.path.join(params.directory.decode('utf-8'),params.filename)                  
