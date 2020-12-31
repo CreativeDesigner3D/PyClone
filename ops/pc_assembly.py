@@ -57,20 +57,16 @@ class pc_assembly_OT_delete_assembly(Operator):
     bl_description = "This will delete the assembly"
     bl_options = {'UNDO'}
 
-    assembly_name: StringProperty(name="Assembly Name",default="New Assembly")
+    obj_bp_name: StringProperty(name="Base Point Name")
 
     @classmethod
     def poll(cls, context):
         return True
 
     def execute(self, context):
-        assembly = pc_types.Assembly()
-        assembly.create_assembly()
-        assembly.obj_x.location.x = 1
-        assembly.obj_y.location.y = 1
-        assembly.obj_z.location.z = 1
-        assembly.obj_bp.select_set(True)
-        context.view_layer.objects.active = assembly.obj_bp
+        if self.obj_bp_name in bpy.data.objects:
+            obj_bp = bpy.data.objects[self.obj_bp_name]
+            pc_utils.delete_object_and_children(obj_bp)
         return {'FINISHED'}
 
     def invoke(self,context,event):
@@ -80,7 +76,73 @@ class pc_assembly_OT_delete_assembly(Operator):
     def draw(self, context):
         layout = self.layout
         layout.label(text="Are you sure you want to delete the assembly?")
-        layout.label(text=self.assembly_name)
+        layout.label(text=self.obj_bp_name)
+
+
+class pc_assembly_OT_select_base_point(Operator):
+    bl_idname = "pc_assembly.select_base_point"
+    bl_label = "Select Assembly Base Point"
+    bl_description = "This will select the assembly base point"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        bpy.ops.object.select_all(action='DESELECT')
+        if self.obj_bp_name in bpy.data.objects:
+            obj_bp = bpy.data.objects[self.obj_bp_name]
+            obj_bp.hide_viewport = False
+            obj_bp.select_set(True)
+        return {'FINISHED'}
+
+
+class pc_assembly_OT_duplicate_assembly(Operator):
+    bl_idname = "pc_assembly.duplicate_assembly"
+    bl_label = "Duplicate Assembly"
+    bl_description = "This will duplicate the assembly"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def select_obj_and_children(self,obj):
+        obj.hide_viewport = False
+        obj.select_set(True)
+        for child in obj.children:
+            obj.hide_viewport = False
+            child.select_set(True)
+            self.select_obj_and_children(child)
+
+    def hide_empties_and_boolean_meshes(self,obj):
+        if obj.type == 'EMPTY' or obj.hide_render:
+            obj.hide_viewport = True
+        for child in obj.children:
+            self.hide_empties_and_boolean_meshes(child)
+
+    def execute(self, context):
+        bpy.ops.object.select_all(action='DESELECT')
+        if self.obj_bp_name in bpy.data.objects:
+            obj_bp = bpy.data.objects[self.obj_bp_name]
+
+            bpy.ops.object.select_all(action='DESELECT')
+            self.select_obj_and_children(obj_bp)
+            bpy.ops.object.duplicate_move()
+            self.hide_empties_and_boolean_meshes(obj_bp)   
+
+            obj = context.object
+            obj_bp = pc_utils.get_assembly_bp(obj)
+            self.hide_empties_and_boolean_meshes(obj_bp)   
+            obj_bp.hide_viewport = False
+            obj_bp.select_set(True)
+
+        return {'FINISHED'}
 
 
 class pc_assembly_OT_add_object(Operator):
@@ -261,6 +323,8 @@ class pc_assembly_OT_select_parent_assembly(bpy.types.Operator):
 classes = (
     pc_assembly_OT_create_new_assembly,
     pc_assembly_OT_delete_assembly,
+    pc_assembly_OT_select_base_point,
+    pc_assembly_OT_duplicate_assembly,
     pc_assembly_OT_add_object,
     pc_assembly_OT_connect_mesh_to_hooks_in_assembly,
     pc_assembly_OT_create_assembly_script,

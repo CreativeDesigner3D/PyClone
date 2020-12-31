@@ -234,7 +234,7 @@ def draw_assembly_properties(context, layout, assembly):
     box = col.box()
     row = box.row()
     row.label(text="Assembly Name: " + assembly.obj_bp.name)
-    row.operator('pc_assembly.select_parent',text="",icon='SORT_DESC')
+    row.menu('VIEW3D_MT_assembly_menu',text="",icon='DOWNARROW_HLT')
 
     row = box.row(align=True)
     row.prop(scene_props,'assembly_tabs',expand=True)
@@ -435,6 +435,18 @@ def draw_assembly_properties(context, layout, assembly):
                     pyclone_utils.draw_driver(layout,obj,driver)
                     
 
+class VIEW3D_MT_assembly_menu(bpy.types.Menu):
+    bl_label = "Assembly Menu"
+
+    def draw(self, context):
+        layout = self.layout
+        if context.object:
+            assembly_bp = pc_utils.get_assembly_bp(context.object)
+            layout.operator('pc_assembly.select_parent',text="Select Parent Assembly",icon='SORT_DESC')
+            layout.operator('pc_assembly.select_base_point',text="Select Base Point",icon='DECORATE').obj_bp_name = assembly_bp.name
+            layout.operator('pc_assembly.duplicate_assembly',text="Duplicate Assembly",icon='DUPLICATE').obj_bp_name = assembly_bp.name
+            layout.operator('pc_assembly.delete_assembly',icon='X').obj_bp_name = assembly_bp.name
+
 
 class VIEW3D_PT_pc_assembly_properties(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
@@ -488,6 +500,7 @@ class pc_assembly_OT_show_properties(bpy.types.Operator):
         draw_assembly_properties(context,layout,self.assembly)  
 
 classes = (
+    VIEW3D_MT_assembly_menu,
     VIEW3D_PT_pc_assembly_properties,
     pc_assembly_OT_show_properties,
 )
