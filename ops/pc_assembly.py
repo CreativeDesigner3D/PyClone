@@ -15,7 +15,7 @@ from bpy.props import (
         PointerProperty,
         FloatProperty,
         )
-import os
+import os, math
 from ..pc_lib import pc_types, pc_utils
 
 class pc_assembly_OT_create_new_assembly(Operator):
@@ -320,6 +320,80 @@ class pc_assembly_OT_select_parent_assembly(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+class pc_assembly_OT_create_assembly_view(Operator):
+    bl_idname = "pc_assembly.create_assembly_view"
+    bl_label = "Create Assembly View"
+    bl_description = "This will create a new scene and link the assembly to that scene"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+    
+    view_name: StringProperty(name="View Name")
+
+    include_front_view: BoolProperty(name="Include Front View")
+    include_top_view: BoolProperty(name="Include Top View")
+    include_size_view: BoolProperty(name="Include Size View")
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        bpy.ops.object.select_all(action='DESELECT')
+
+        if self.obj_bp_name in bpy.data.objects:
+            obj_bp = bpy.data.objects[self.obj_bp_name]
+
+            #CREATE COLLECTION FROM ASSEMBLY
+            pc_utils.select_object_and_children(obj_bp)
+            bpy.ops.collection.create(name=self.view_name)
+
+            #CREATE NEW SCENE
+            world = context.scene.world
+            bpy.ops.scene.new(type='EMPTY')
+            context.scene.name = self.view_name
+            context.scene.world = world
+            #TODO: Assign scene.is_view_scene to load UI for Settings
+
+            #INSTANCE ASSEMBLY COLLECTION
+            bpy.ops.object.collection_instance_add(collection=self.view_name)
+
+            #TODO: Create all selected Views
+            #TODO: Create dimensions
+
+            #CREATE CAMERA
+            cam = bpy.data.cameras.new('Camera ' + self.view_name)
+            cam.type = 'ORTHO'
+            cam_obj = bpy.data.objects.new('Camera ' + self.view_name,cam)
+            cam_obj.location.x = 0
+            cam_obj.location.y = -5
+            cam_obj.location.z = 0
+            cam_obj.rotation_euler.x = math.radians(90)
+            cam_obj.rotation_euler.y = 0
+            cam_obj.rotation_euler.z = 0
+            context.view_layer.active_layer_collection.collection.objects.link(cam_obj)   
+            context.scene.camera = cam_obj
+
+            #CHANGE RENDERING SETTINGS FOR FREE STYLE
+        
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self,'view_name')
+        box = layout.box()
+        box.label(text="What views of the assembly do you want to include?")
+        row = box.row()
+        row.prop(self,'include_front_view',text="Front")
+        row.prop(self,'include_front_view',text="Top")
+        row.prop(self,'include_front_view',text="Side")
+        
+
 classes = (
     pc_assembly_OT_create_new_assembly,
     pc_assembly_OT_delete_assembly,
@@ -328,7 +402,8 @@ classes = (
     pc_assembly_OT_add_object,
     pc_assembly_OT_connect_mesh_to_hooks_in_assembly,
     pc_assembly_OT_create_assembly_script,
-    pc_assembly_OT_select_parent_assembly
+    pc_assembly_OT_select_parent_assembly,
+    pc_assembly_OT_create_assembly_view
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

@@ -445,6 +445,7 @@ class VIEW3D_MT_assembly_menu(bpy.types.Menu):
             layout.operator('pc_assembly.select_parent',text="Select Parent Assembly",icon='SORT_DESC')
             layout.operator('pc_assembly.select_base_point',text="Select Base Point",icon='DECORATE').obj_bp_name = assembly_bp.name
             layout.operator('pc_assembly.duplicate_assembly',text="Duplicate Assembly",icon='DUPLICATE').obj_bp_name = assembly_bp.name
+            layout.operator('pc_assembly.create_assembly_view',text="Create Assembly View",icon='CAMERA_DATA').obj_bp_name = assembly_bp.name
             layout.operator('pc_assembly.delete_assembly',icon='X').obj_bp_name = assembly_bp.name
 
 
