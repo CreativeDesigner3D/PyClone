@@ -25,6 +25,12 @@ class pc_object_OT_select_object(Operator):
 
     obj_name: StringProperty(name='Object Name')
 
+    @classmethod
+    def poll(cls, context):
+        if context.mode != 'OBJECT':
+            return False
+        return True
+
     def execute(self, context):
         if self.obj_name in context.scene.objects:
             bpy.ops.object.select_all(action = 'DESELECT')
