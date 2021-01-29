@@ -16,7 +16,9 @@ from .ui import pc_filebrowser_ui
 from .ui import pc_lists
 from .ui import pc_view3d_ui_menu
 from .ui import pc_view3d_ui_sidebar_object
+from .ui import pc_text_ui_sidebar_library
 from .ui import pc_view3d_ui_sidebar_assemblies
+from .ui import pc_view3d_ui_layout_view
 from .ops import pc_assembly
 from .ops import pc_driver
 from .ops import pc_prompts
@@ -43,8 +45,10 @@ def register():
     pc_filebrowser_ui.register()
     pc_lists.register()
     pc_view3d_ui_menu.register()
+    pc_text_ui_sidebar_library.register()
     pc_view3d_ui_sidebar_object.register()
     pc_view3d_ui_sidebar_assemblies.register()
+    pc_view3d_ui_layout_view.register()
     pc_assembly.register()
     pc_driver.register()
     pc_prompts.register()
@@ -71,8 +75,10 @@ def unregister():
     pc_filebrowser_ui.unregister()
     pc_lists.unregister()
     pc_view3d_ui_menu.unregister()
+    pc_text_ui_sidebar_library.unregister()
     pc_view3d_ui_sidebar_object.unregister()
     pc_view3d_ui_sidebar_assemblies.unregister()
+    pc_view3d_ui_layout_view.unregister()
     pc_assembly.unregister()
     pc_driver.unregister()
     pc_prompts.unregister()

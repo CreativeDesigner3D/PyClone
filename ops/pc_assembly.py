@@ -16,7 +16,8 @@ from bpy.props import (
         FloatProperty,
         )
 import os, math
-from ..pc_lib import pc_types, pc_utils
+from .. import pyclone_utils
+from ..pc_lib import pc_types, pc_utils, pc_unit
 
 class pc_assembly_OT_create_new_assembly(Operator):
     bl_idname = "pc_assembly.create_new_assembly"
@@ -320,52 +321,181 @@ class pc_assembly_OT_select_parent_assembly(bpy.types.Operator):
 
         return {'FINISHED'}
 
+def get_dimension_collection():
+    if 'DIMENSIONS' in bpy.data.collections:
+        return bpy.data.collections['DIMENSIONS']
+    else:
+        coll = bpy.data.collections.new('DIMENSIONS')
+        bpy.context.view_layer.active_layer_collection.collection.children.link(coll)
+        return coll
 
-class pc_assembly_OT_create_assembly_view(Operator):
-    bl_idname = "pc_assembly.create_assembly_view"
-    bl_label = "Create Assembly View"
+class pc_assembly_OT_create_assembly_layout(Operator):
+    bl_idname = "pc_assembly.create_assembly_layout"
+    bl_label = "Create Assembly Layout"
     bl_description = "This will create a new scene and link the assembly to that scene"
     bl_options = {'UNDO'}
 
     obj_bp_name: StringProperty(name="Base Point Name")
     
-    view_name: StringProperty(name="View Name")
+    view_name: StringProperty(name="View Name",default="New Layout View")
 
-    include_front_view: BoolProperty(name="Include Front View")
+    include_front_view: BoolProperty(name="Include Front View",default=True)
     include_top_view: BoolProperty(name="Include Top View")
-    include_size_view: BoolProperty(name="Include Size View")
+    include_side_view: BoolProperty(name="Include Side View")
+
+    VISIBLE_LINESET_NAME = "Visible Lines"
+    HIDDEN_LINESET_NAME = "Hidden Lines"
+    HIDDEN_LINE_DASH_PX = 10
+    HIDDEN_LINE_GAP_PX = 10
 
     @classmethod
     def poll(cls, context):
         return True
 
+    def create_linestyles(self):
+        linestyles = bpy.data.linestyles
+        linestyles.new(self.VISIBLE_LINESET_NAME)
+        
+        hidden_linestyle = linestyles.new(self.HIDDEN_LINESET_NAME)
+        hidden_linestyle.use_dashed_line = True
+        hidden_linestyle.dash1 = self.HIDDEN_LINE_DASH_PX
+        hidden_linestyle.dash2 = self.HIDDEN_LINE_DASH_PX
+        hidden_linestyle.dash3 = self.HIDDEN_LINE_DASH_PX
+        hidden_linestyle.gap1 = self.HIDDEN_LINE_GAP_PX
+        hidden_linestyle.gap2 = self.HIDDEN_LINE_GAP_PX
+        hidden_linestyle.gap3 = self.HIDDEN_LINE_GAP_PX
+
+    def create_linesets(self, scene):
+        f_settings = scene.view_layers[0].freestyle_settings
+        linestyles = bpy.data.linestyles
+        
+        visible_lineset = f_settings.linesets.new(self.VISIBLE_LINESET_NAME)
+        visible_lineset.linestyle = linestyles[self.VISIBLE_LINESET_NAME]
+        visible_lineset.select_by_collection = True
+        visible_lineset.collection_negation = 'EXCLUSIVE'
+        visible_lineset.collection = get_dimension_collection()
+
+        hidden_lineset = f_settings.linesets.new(self.HIDDEN_LINESET_NAME)
+        hidden_lineset.linestyle = linestyles[self.HIDDEN_LINESET_NAME]
+        
+        hidden_lineset.select_by_visibility = True
+        hidden_lineset.visibility = 'HIDDEN'
+        hidden_lineset.select_by_edge_types = True
+        hidden_lineset.select_by_face_marks = False
+        hidden_lineset.select_by_collection = True
+        hidden_lineset.select_by_image_border = False
+        
+        hidden_lineset.select_silhouette = True
+        hidden_lineset.select_border = False
+        hidden_lineset.select_contour = False
+        hidden_lineset.select_suggestive_contour = False
+        hidden_lineset.select_ridge_valley = False
+        hidden_lineset.select_crease = False
+        hidden_lineset.select_edge_mark = True
+        hidden_lineset.select_external_contour = False
+        hidden_lineset.select_material_boundary = False
+        hidden_lineset.collection_negation = 'EXCLUSIVE'
+        hidden_lineset.collection = get_dimension_collection()
+
+    def clear_unused_linestyles(self):
+        for linestyle in bpy.data.linestyles:
+            if linestyle.users == 0:
+                bpy.data.linestyles.remove(linestyle)
+
+    def create_view_scene(self,context):
+        world = context.scene.world
+        bpy.ops.scene.new(type='EMPTY')
+        new_scene = context.scene
+        props = pyclone_utils.get_scene_props(new_scene)
+        props.is_view_scene = True
+        new_scene.name = self.view_name
+        new_scene.world = world
+        new_scene.render.use_freestyle = True
+        view_settings = new_scene.view_settings
+        view_settings.view_transform = 'Standard'
+        view_settings.look = 'High Contrast'
+        view_settings.exposure = 4
+
+        self.create_linesets(context.scene)
+
     def execute(self, context):
+        self.create_linestyles()
+
         bpy.ops.object.select_all(action='DESELECT')
 
         if self.obj_bp_name in bpy.data.objects:
             obj_bp = bpy.data.objects[self.obj_bp_name]
 
+            assembly = pc_types.Assembly(obj_bp)
+            a_width = math.fabs(assembly.obj_x.location.x)
+            a_depth = math.fabs(assembly.obj_y.location.y)
+            a_height = math.fabs(assembly.obj_z.location.z)
+            view_gap = .5
+
             #CREATE COLLECTION FROM ASSEMBLY
             pc_utils.select_object_and_children(obj_bp)
             bpy.ops.collection.create(name=self.view_name)
 
+            collection = bpy.data.collections[self.view_name]
+
             #CREATE NEW SCENE
-            world = context.scene.world
-            bpy.ops.scene.new(type='EMPTY')
-            context.scene.name = self.view_name
-            context.scene.world = world
-            #TODO: Assign scene.is_view_scene to load UI for Settings
+            self.create_view_scene(context)
 
             #INSTANCE ASSEMBLY COLLECTION
-            bpy.ops.object.collection_instance_add(collection=self.view_name)
+            # bpy.ops.object.collection_instance_add(collection=self.view_name)
 
-            #TODO: Create all selected Views
+            # coll_obj = context.object
+            # obj_props = pyclone_utils.get_object_props(coll_obj)
+            # obj_props.is_view_object = True
+
+            if self.include_front_view:
+                front_obj = bpy.data.objects.new(self.view_name + ' - Front',None)
+                front_obj.instance_type = 'COLLECTION'
+                front_obj.instance_collection = collection
+                front_obj.empty_display_size = .01
+                # front_obj.show_instancer_for_viewport = False
+                front_obj.location = (0,0,0)
+                front_obj.rotation_euler = (0,0,0)
+                context.view_layer.active_layer_collection.collection.objects.link(front_obj)   
+                front_obj.select_set(True)
+                obj_props = pyclone_utils.get_object_props(front_obj)
+                obj_props.is_view_object = True
+
+            if self.include_side_view:
+                side_obj = bpy.data.objects.new(self.view_name + ' - Side',None)
+                side_obj.instance_type = 'COLLECTION'
+                side_obj.instance_collection = collection
+                side_obj.empty_display_size = .01
+                # side_obj.show_instancer_for_viewport = False
+                side_obj.location = (a_width + a_depth + view_gap,0,0)
+                side_obj.rotation_euler = (0,0,math.radians(-90))
+                context.view_layer.active_layer_collection.collection.objects.link(side_obj) 
+                side_obj.select_set(True)  
+                obj_props = pyclone_utils.get_object_props(side_obj)
+                obj_props.is_view_object = True
+
+            if self.include_top_view:
+                top_obj = bpy.data.objects.new(self.view_name + ' - Top',None)
+                top_obj.instance_type = 'COLLECTION'
+                top_obj.instance_collection = collection
+                top_obj.empty_display_size = .01
+                # top_obj.show_instancer_for_viewport = False
+                top_obj.location = (0,0,a_height + a_depth + view_gap)
+                top_obj.rotation_euler = (math.radians(90),0,0)
+                context.view_layer.active_layer_collection.collection.objects.link(top_obj) 
+                top_obj.select_set(True)  
+                obj_props = pyclone_utils.get_object_props(top_obj)
+                obj_props.is_view_object = True
+
             #TODO: Create dimensions
+            #Append Data
 
             #CREATE CAMERA
             cam = bpy.data.cameras.new('Camera ' + self.view_name)
             cam.type = 'ORTHO'
             cam_obj = bpy.data.objects.new('Camera ' + self.view_name,cam)
+            obj_props = pyclone_utils.get_object_props(cam_obj)
+            obj_props.is_view_object = True
             cam_obj.location.x = 0
             cam_obj.location.y = -5
             cam_obj.location.z = 0
@@ -374,6 +504,12 @@ class pc_assembly_OT_create_assembly_view(Operator):
             cam_obj.rotation_euler.z = 0
             context.view_layer.active_layer_collection.collection.objects.link(cam_obj)   
             context.scene.camera = cam_obj
+
+            bpy.ops.view3d.camera_to_view_selected()
+            bpy.ops.view3d.view_camera()
+            bpy.ops.view3d.view_center_camera()
+
+            self.clear_unused_linestyles()
 
             #CHANGE RENDERING SETTINGS FOR FREE STYLE
         
@@ -390,9 +526,53 @@ class pc_assembly_OT_create_assembly_view(Operator):
         box.label(text="What views of the assembly do you want to include?")
         row = box.row()
         row.prop(self,'include_front_view',text="Front")
-        row.prop(self,'include_front_view',text="Top")
-        row.prop(self,'include_front_view',text="Side")
+        row.prop(self,'include_top_view',text="Top")
+        row.prop(self,'include_side_view',text="Side")
         
+
+class pc_assembly_OT_create_assembly_dimension(bpy.types.Operator):
+    bl_idname = "pc_assembly.create_assembly_dimension"
+    bl_label = "Create Assembly Dimension"
+    bl_description = "This creates an assembly dimension"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def get_dimension(self,context):
+        ROOT_PATH = os.path.dirname(__file__)
+        PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Dimension_Arrow.blend")
+
+        with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
+            data_to.objects = data_from.objects
+
+        obj_bp = None
+        collection = get_dimension_collection()
+        for obj in data_to.objects:
+            if not obj.parent:
+                obj_bp = obj
+            collection.objects.link(obj)
+
+        return obj_bp
+
+    def execute(self, context):
+        obj_bp = self.get_dimension(context)
+        dim = pc_types.Assembly(obj_bp)
+        dim.get_prompt("Font Size").set_value(.07)
+        dim.get_prompt("Horizontal Line Location").set_value(.05)
+        dim.get_prompt("Text Width").set_value(.3)
+        dim.get_prompt("Line Thickness").set_value(.002)
+        dim.get_prompt("Arrow Height").set_value(.03)
+        dim.get_prompt("Arrow Length").set_value(.03)
+        dim.obj_bp.rotation_euler.x = math.radians(90)
+        dim.obj_bp.rotation_euler.y = math.radians(-90)
+        dim.obj_bp.scale = (0.08332,0.08332,0.08332)
+        dim.obj_x.location.x = pc_unit.inch(36)
+        dim.obj_y.location.y = .2
+        
+        return {'FINISHED'}
+
 
 classes = (
     pc_assembly_OT_create_new_assembly,
@@ -403,7 +583,8 @@ classes = (
     pc_assembly_OT_connect_mesh_to_hooks_in_assembly,
     pc_assembly_OT_create_assembly_script,
     pc_assembly_OT_select_parent_assembly,
-    pc_assembly_OT_create_assembly_view
+    pc_assembly_OT_create_assembly_layout,
+    pc_assembly_OT_create_assembly_dimension
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

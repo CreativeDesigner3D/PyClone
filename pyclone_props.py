@@ -323,6 +323,8 @@ class PC_Object_Props(PropertyGroup):
     prompt_index: IntProperty(name="Prompt Index")
     calculator_index: IntProperty(name="Calculator Index")
 
+    is_view_object: BoolProperty(name="Is View Object", default=False)
+
     def add_prompt(self,prompt_type,prompt_name):
         prompt = self.prompts.add()
         prompt.prompt_type = prompt_type
@@ -473,6 +475,28 @@ class PC_Window_Manager_Props(bpy.types.PropertyGroup):
     def unregister(cls):
         del bpy.types.WindowManager.pyclone    
 
+def update_page_scale(self,context):
+    cam_obj = context.scene.camera
+    cam_obj.data.ortho_scale = .279
+    cam_obj.location.x = .1395
+    cam_obj.location.y = -2.0573
+    cam_obj.location.z = 0.0784
+
+    #TODO: SETUP ALL DIFFERENT OBJECT SCALE
+    if self.page_scale == '1:1':
+        scale = (1,1,1)
+    elif self.page_scale == '1/2in_1ft':
+        scale = (0.04166,0.04166,0.04166)    
+    elif self.page_scale == '1/4in_1ft':
+        scale = (0.02083,0.02083,0.02083)    
+    elif self.page_scale == '1in_1ft':
+        scale = (.08332,.08332,.08332)    
+    else:
+        scale = (.08332,.08332,.08332)
+
+    for obj in context.visible_objects:
+        if obj.pyclone.is_view_object and obj.type == 'EMPTY' and obj.instance_type == 'COLLECTION':
+            obj.scale = scale
 
 class PC_Scene_Props(PropertyGroup):
     assembly_tabs: EnumProperty(name="Assembly Tabs",
@@ -500,6 +524,47 @@ class PC_Scene_Props(PropertyGroup):
     driver_override_object: PointerProperty(name="Active Library Name",type=bpy.types.Object)
 
     active_library_name: StringProperty(name="Active Library Name",default="")
+
+    is_view_scene: BoolProperty(name="Is View Scene",default=False)
+
+    page_size: EnumProperty(name="Page Size",
+                            items=[('LETTER',"Letter 216 x 279 mm (8.5 X 11 in)","Letter 216 x 279 mm (8.5 X 11 in)"),
+                                   ('LEGAL',"Legal 216 x 356 mm (8.5 X 14 in)","Legal 216 x 356 mm (8.5 X 14 in)"),
+                                   ('ANSI_A',"ANSI A 216 x 279 mm (8.5 X 11 in)","ANSI A 216 x 279 mm (8.5 X 11 in)"),
+                                   ('ANSI_B',"ANSI B 279 x 432 mm (11 X 17 in)","ANSI B 279 x 432 mm (11 X 17 in)"),
+                                   ('ANSI_C',"ANSI C 432 x 559 mm (17 X 22 in)","ANSI C 432 x 559 mm (17 X 22 in)"),
+                                   ('ANSI_D',"ANSI D 559 x 864 mm (22 X 34 in)","ANSI D 559 x 864 mm (22 X 34 in)"),
+                                   ('ANSI_E',"ANSI E 216 x 279 mm (34 X 44 in)","ANSI E 216 x 279 mm (34 X 44 in)"),
+                                   ('ARCH_A',"ARCH A 229 × 305 mm (9 X 12 in)","ARCH A 229 × 305 mm (9 X 12 in)"),
+                                   ('ARCH_B',"ARCH B 305 × 457 mm (12 X 18 in)","ARCH B 305 × 457 mm (12 X 18 in)"),
+                                   ('ARCH_C',"ARCH C 457 × 610 mm (18 X 24 in)","ARCH C 457 × 610 mm (18 X 24 in)"),
+                                   ('ARCH_D',"ARCH D 610 × 914 mm (24 X 36 in)","ARCH D 610 × 914 mm (24 X 36 in)"),
+                                   ('ARCH_E',"ARCH E 914 × 1219 mm (36 X 48 in)","ARCH E 914 × 1219 mm (36 X 48 in)")],
+                              default='LETTER')
+
+    fit_to_paper: BoolProperty(name="Fit to Paper",default=True,update=update_page_scale)
+
+    page_scale: EnumProperty(name="Page Scale",
+                            items=[('1:1',"1:1","1:1"),
+                                   ('1/4in_1ft',"1/4 in = 1 ft","1:1"),
+                                   ('3/8in_1ft',"3/8 in = 1 ft","1:1"),
+                                   ('1/2in_1ft',"1/2 in = 1 ft","1:1"),
+                                   ('3/4in_1ft',"3/4 in = 1 ft","1:1"),
+                                   ('1in_1ft',"1 in = 1 ft","1 inch = 1 foot"),
+                                   ('1-1/2in_1ft',"3/4 in = 1 ft","1:1")],
+                            default='1:1',
+                            update=update_page_scale)
+
+    page_style: EnumProperty(name="Page Style",
+                             items=[('BLACK_AND_WHITE',"Black and White","Black and White"),
+                                    ('FULL_COLOR',"Full Color","Full Color"),
+                                    ('MONOCHROME',"Monochrome","Monochrome"),
+                                    ('SCREENING_100%',"Screening 100%","Screening 100%"),
+                                    ('SCREENING_25%',"Screening 25%","Screening 25%"),
+                                    ('SCREENING_50%',"Screening 50%","Screening 50%"),
+                                    ('SCREENING_75%',"Screening 75%","Screening 75%"),
+                                    ('New...',"New..","New...")],
+                             default='FULL_COLOR')
 
     @classmethod
     def register(cls):
