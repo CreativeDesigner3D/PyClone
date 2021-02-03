@@ -75,13 +75,16 @@ class VIEW3D_PT_pc_layout_view(Panel):
             box.label(text="Dimensions and Annotations",icon='DRIVER_DISTANCE')               
             box.operator('pc_assembly.create_assembly_dimension',text="Add Dimension",icon='TRACKING_FORWARDS_SINGLE')
             box.operator('pc_assembly.create_assembly_dimension',text="Add Annotation",icon='CON_ROTLIMIT')
-            box.operator('pc_assembly.create_assembly_dimension',text="Add Title Block",icon='MENU_PANEL')
+            box.operator('pc_assembly.add_title_block',text="Add Title Block",icon='MENU_PANEL')
 
             #ADD TITLE BLOCK
 
         else:
-            pass
-
+            box = layout.box()
+            box.label(text="Dimensions and Annotations",icon='DRIVER_DISTANCE')               
+            box.operator('pc_assembly.create_assembly_dimension',text="Add Dimension",icon='TRACKING_FORWARDS_SINGLE')
+            box.operator('pc_assembly.create_assembly_dimension',text="Add Annotation",icon='CON_ROTLIMIT')
+            box.operator('pc_assembly.add_title_block',text="Add Title Block",icon='MENU_PANEL')
             # box.prop(cam_obj.data,'ortho_scale',text="View Scale")
             
             # col = box.column(align=True)

@@ -307,6 +307,17 @@ class Calculator(PropertyGroup):
 
             self.id_data.location = self.id_data.location 
 
+def update_flip_x(self,context):
+    if self.flip_x:
+        self.id_data.scale.x = -1
+    else:
+        self.id_data.scale.x = 1
+
+def update_flip_y(self,context):
+    if self.flip_y:
+        self.id_data.scale.y = -1
+    else:
+        self.id_data.scale.y = 1
 
 class PC_Object_Props(PropertyGroup):
     show_object_props: BoolProperty(name="Show Object Props", default=False)
@@ -324,6 +335,8 @@ class PC_Object_Props(PropertyGroup):
     calculator_index: IntProperty(name="Calculator Index")
 
     is_view_object: BoolProperty(name="Is View Object", default=False)
+    flip_x: BoolProperty(name="Flip X", default=False,update=update_flip_x)
+    flip_y: BoolProperty(name="Flip Y", default=False,update=update_flip_y)
 
     def add_prompt(self,prompt_type,prompt_name):
         prompt = self.prompts.add()
@@ -445,6 +458,18 @@ class PC_Object_Props(PropertyGroup):
     @classmethod
     def unregister(cls):
         del bpy.types.Object.pyclone
+
+
+class PC_Collection_Props(PropertyGroup):
+    assembly_bp: PointerProperty(name="Assembly Base Point",type=bpy.types.Object)
+
+    @classmethod
+    def register(cls):
+        bpy.types.Collection.pyclone = PointerProperty(name="PyClone",description="PyClone Properties",type=cls)
+        
+    @classmethod
+    def unregister(cls):
+        del bpy.types.Collection.pyclone
 
 
 class PC_Window_Manager_Props(bpy.types.PropertyGroup):
@@ -588,6 +613,7 @@ classes = (
     Calculator_Prompt,
     Calculator,
     PC_Object_Props,
+    PC_Collection_Props,
     PC_Window_Manager_Props,
     PC_Scene_Props,
 )

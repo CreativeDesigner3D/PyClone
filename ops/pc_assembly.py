@@ -321,13 +321,6 @@ class pc_assembly_OT_select_parent_assembly(bpy.types.Operator):
 
         return {'FINISHED'}
 
-def get_dimension_collection():
-    if 'DIMENSIONS' in bpy.data.collections:
-        return bpy.data.collections['DIMENSIONS']
-    else:
-        coll = bpy.data.collections.new('DIMENSIONS')
-        bpy.context.view_layer.active_layer_collection.collection.children.link(coll)
-        return coll
 
 class pc_assembly_OT_create_assembly_layout(Operator):
     bl_idname = "pc_assembly.create_assembly_layout"
@@ -366,6 +359,7 @@ class pc_assembly_OT_create_assembly_layout(Operator):
         hidden_linestyle.gap3 = self.HIDDEN_LINE_GAP_PX
 
     def create_linesets(self, scene):
+        temp_dim = pc_types.Dimension()
         f_settings = scene.view_layers[0].freestyle_settings
         linestyles = bpy.data.linestyles
         
@@ -373,7 +367,7 @@ class pc_assembly_OT_create_assembly_layout(Operator):
         visible_lineset.linestyle = linestyles[self.VISIBLE_LINESET_NAME]
         visible_lineset.select_by_collection = True
         visible_lineset.collection_negation = 'EXCLUSIVE'
-        visible_lineset.collection = get_dimension_collection()
+        visible_lineset.collection = temp_dim.get_dimension_collection()
 
         hidden_lineset = f_settings.linesets.new(self.HIDDEN_LINESET_NAME)
         hidden_lineset.linestyle = linestyles[self.HIDDEN_LINESET_NAME]
@@ -395,7 +389,7 @@ class pc_assembly_OT_create_assembly_layout(Operator):
         hidden_lineset.select_external_contour = False
         hidden_lineset.select_material_boundary = False
         hidden_lineset.collection_negation = 'EXCLUSIVE'
-        hidden_lineset.collection = get_dimension_collection()
+        hidden_lineset.collection = temp_dim.get_dimension_collection()
 
     def clear_unused_linestyles(self):
         for linestyle in bpy.data.linestyles:
@@ -437,6 +431,7 @@ class pc_assembly_OT_create_assembly_layout(Operator):
             bpy.ops.collection.create(name=self.view_name)
 
             collection = bpy.data.collections[self.view_name]
+            collection.pyclone.assembly_bp = obj_bp
 
             #CREATE NEW SCENE
             self.create_view_scene(context)
@@ -536,42 +531,138 @@ class pc_assembly_OT_create_assembly_dimension(bpy.types.Operator):
     bl_description = "This creates an assembly dimension"
     bl_options = {'UNDO'}
 
+    add_x_dimension: BoolProperty(name="Add X Dimension")
+    add_y_dimension: BoolProperty(name="Add Y Dimension")
+    add_z_dimension: BoolProperty(name="Add Z Dimension")
+
     @classmethod
     def poll(cls, context):
         return True
 
-    def get_dimension(self,context):
-        ROOT_PATH = os.path.dirname(__file__)
-        PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Dimension_Arrow.blend")
+    def invoke(self,context,event):
+        dim_bp = pc_utils.get_assembly_bp(context.object)
+        self.dimension = pc_types.Dimension(dim_bp)  
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
 
-        with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
-            data_to.objects = data_from.objects
+    def get_selected_collection(self,context):
+        sel_obj = context.object
+        if sel_obj.instance_type == 'COLLECTION':
+            return sel_obj.instance_collection
 
-        obj_bp = None
-        collection = get_dimension_collection()
-        for obj in data_to.objects:
-            if not obj.parent:
-                obj_bp = obj
-            collection.objects.link(obj)
-
-        return obj_bp
+    def get_assembly_collection(self,collection):
+        obj_bp = collection.pyclone.assembly_bp
+        assembly = pc_types.Assembly(obj_bp)
+        return assembly
 
     def execute(self, context):
-        obj_bp = self.get_dimension(context)
-        dim = pc_types.Assembly(obj_bp)
-        dim.get_prompt("Font Size").set_value(.07)
-        dim.get_prompt("Horizontal Line Location").set_value(.05)
-        dim.get_prompt("Text Width").set_value(.3)
-        dim.get_prompt("Line Thickness").set_value(.002)
-        dim.get_prompt("Arrow Height").set_value(.03)
-        dim.get_prompt("Arrow Length").set_value(.03)
-        dim.obj_bp.rotation_euler.x = math.radians(90)
-        dim.obj_bp.rotation_euler.y = math.radians(-90)
-        dim.obj_bp.scale = (0.08332,0.08332,0.08332)
-        dim.obj_x.location.x = pc_unit.inch(36)
-        dim.obj_y.location.y = .2
-        
+        sel_obj = context.object
+        collection = self.get_selected_collection(context)
+        assembly = self.get_assembly_collection(collection)
+
+        if self.add_x_dimension:
+            dim = pc_types.Dimension()
+            dim.create_dimension()
+            dim.obj_bp.rotation_euler.x = math.radians(-90)
+            dim.obj_bp.rotation_euler.y = 0
+            dim.obj_y.location.y = .2
+            dim.obj_bp.parent = sel_obj
+            dim.obj_bp.location = assembly.obj_bp.location
+            dim.obj_x.location.x = assembly.obj_x.location.x
+            dim.update_dim_text()
+
+        if self.add_y_dimension:
+            dim = pc_types.Dimension()
+            dim.create_dimension()
+            dim.obj_bp.rotation_euler.x = math.radians(90)
+            dim.obj_bp.rotation_euler.y = math.radians(0)
+            dim.obj_bp.rotation_euler.z = math.radians(-90)
+            dim.obj_y.location.y = -.2
+            dim.obj_bp.parent = sel_obj
+            dim.obj_bp.location = assembly.obj_bp.location
+            dim.obj_x.location.x = math.fabs(assembly.obj_y.location.y)
+            dim.update_dim_text()
+
+        if self.add_z_dimension:
+            dim = pc_types.Dimension()
+            dim.create_dimension()
+            dim.obj_bp.rotation_euler.x = math.radians(90)
+            dim.obj_bp.rotation_euler.y = math.radians(-90)
+            dim.obj_y.location.y = .2
+            dim.obj_bp.parent = sel_obj
+            dim.obj_bp.location = assembly.obj_bp.location
+            dim.obj_x.location.x = assembly.obj_z.location.z
+            dim.update_dim_text()            
         return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self,'add_x_dimension')
+        layout.prop(self,'add_y_dimension')
+        layout.prop(self,'add_z_dimension')      
+
+
+class pc_assembly_OT_add_title_block(bpy.types.Operator):
+    bl_idname = "pc_assembly.add_title_block"
+    bl_label = "Add Title Block"
+    bl_description = "This adds a title block to the current layout"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    # def get_selected_collection(self,context):
+    #     sel_obj = context.object
+    #     if sel_obj.instance_type == 'COLLECTION':
+    #         return sel_obj.instance_collection
+
+    # def get_title_block(self,context):
+    #     collection = self.get_selected_collection(context)
+
+    #     ROOT_PATH = os.path.dirname(__file__)
+    #     PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Title_Block.blend")
+
+    #     with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
+    #         data_to.objects = data_from.objects
+
+    #     for obj in data_to.objects:
+    #         collection.objects.link(obj)
+
+    def execute(self, context):
+        title_block = pc_types.Title_Block()
+        title_block.create_title_block()
+        return {'FINISHED'}
+
+
+class pc_assembly_OT_show_dimension_properties(Operator):
+    bl_idname = "pc_assembly.show_dimension_properties"
+    bl_label = "Show Dimension Properties"
+    bl_description = "This will show the dimension properties"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    dimension = None
+
+    def execute(self, context):
+        self.dimension.update_dim_text()
+        return {'FINISHED'}
+
+    def check(self, context):
+        self.dimension.update_dim_text()
+        return True
+
+    def invoke(self,context,event):
+        dim_bp = pc_utils.get_assembly_bp(context.object)
+        self.dimension = pc_types.Dimension(dim_bp)  
+        self.dimension.update_dim_text()
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        self.dimension.draw_ui(context,layout)
 
 
 classes = (
@@ -584,7 +675,9 @@ classes = (
     pc_assembly_OT_create_assembly_script,
     pc_assembly_OT_select_parent_assembly,
     pc_assembly_OT_create_assembly_layout,
-    pc_assembly_OT_create_assembly_dimension
+    pc_assembly_OT_create_assembly_dimension,
+    pc_assembly_OT_show_dimension_properties,
+    pc_assembly_OT_add_title_block
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

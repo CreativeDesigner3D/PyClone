@@ -1,4 +1,5 @@
 import bpy
+import os
 from . import pc_utils
 
 class Assembly:
@@ -310,3 +311,139 @@ class Assembly:
             self.obj_z.location.z = value
         else:
             self.obj_z.pyclone.loc_z(expression,variables)                                                                      
+
+
+class Annotation(Assembly):
+
+    def __init__(self,obj_bp=None):
+        super().__init__(obj_bp=obj_bp)  
+        if self.obj_bp:
+            for child in obj_bp.children:
+                if child.type == 'FONT':
+                    self.obj_text = child    
+
+    def get_dimension_collection(self):
+        if 'DIMENSIONS' in bpy.data.collections:
+            return bpy.data.collections['DIMENSIONS']
+        else:
+            coll = bpy.data.collections.new('DIMENSIONS')
+            bpy.context.view_layer.active_layer_collection.collection.children.link(coll)
+            return coll
+
+
+class Title_Block(Annotation):
+
+    def __init__(self,obj_bp=None):
+        super().__init__(obj_bp=obj_bp)  
+        if self.obj_bp:
+            for child in obj_bp.children:
+                if child.type == 'FONT':
+                    self.obj_text = child   
+
+    def create_title_block(self):
+        collection = self.get_dimension_collection()
+
+        ROOT_PATH = os.path.dirname(__file__)
+        PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Title_Block.blend")
+
+        with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
+            data_to.objects = data_from.objects
+
+        for obj in data_to.objects:
+            collection.objects.link(obj)
+
+
+class Dimension(Annotation):
+
+    obj_text = None
+
+    def __init__(self,obj_bp=None):
+        super().__init__(obj_bp=obj_bp)  
+        if self.obj_bp:
+            for child in obj_bp.children:
+                if child.type == 'FONT':
+                    self.obj_text = child     
+
+    def flip_x(self):
+        self.obj_text.scale.x = -1
+
+    def flip_y(self):
+        self.obj_text.scale.y = -1
+
+    def create_dimension(self):
+        ROOT_PATH = os.path.dirname(__file__)
+        PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Dimension_Arrow.blend")
+
+        with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
+            data_to.objects = data_from.objects
+
+        obj_bp = None
+        collection = self.get_dimension_collection()
+        for obj in data_to.objects:
+            if "obj_bp" in obj:
+                self.obj_bp = obj            
+            if "obj_x" in obj:
+                self.obj_x = obj
+            if "obj_y" in obj:
+                self.obj_y = obj           
+            if "obj_z" in obj:
+                self.obj_z = obj
+            if "obj_prompts" in obj:
+                self.obj_prompts = obj    
+            if obj.type == 'FONT':
+                self.obj_text = obj            
+            obj["PROMPT_ID"] = "pc_assembly.show_dimension_properties"
+            collection.objects.link(obj)
+
+        self.get_prompt("Font Size").set_value(.07)
+        self.get_prompt("Horizontal Line Location").set_value(.05)
+        self.get_prompt("Line Thickness").set_value(.002)
+        self.get_prompt("Arrow Height").set_value(.03)
+        self.get_prompt("Arrow Length").set_value(.03)
+
+    def update_dim_text(self):
+        text = str(round(self.obj_x.location.x,2))
+        self.obj_text.data.body = text
+        self.obj_bp.location = self.obj_bp.location #FORCE UPDATE
+        text_width = self.get_prompt("Text Width")
+        text_width.set_value(self.obj_text.dimensions.x + .05)
+        for child in self.obj_bp.children:
+            if child.type == 'EMPTY':
+                child.hide_viewport = True
+        if self.obj_y.location.y < 0:
+            hll = self.get_prompt('Horizontal Line Location')
+            hll.set_value(hll.get_value()*-1)
+
+    def draw_ui(self,context,layout):
+        arrow_height = self.get_prompt("Arrow Height")
+        arrow_length = self.get_prompt("Arrow Length")
+        extend_first_line_amount = self.get_prompt("Extend First Line Amount")
+        extend_second_line_amount = self.get_prompt("Extend Second Line Amount")
+        line_thickness = self.get_prompt("Line Thickness")
+
+        row = layout.row()
+        row.label(text="Dimension Length:")
+        row.prop(self.obj_x,'location',index=0,text="")
+
+        row = layout.row()
+        row.label(text="Leader Length:")
+        row.prop(self.obj_y,'location',index=1,text="")   
+
+        row = layout.row() 
+        row.label(text="Arrow Size:")
+        row.prop(arrow_height,'distance_value',text="Height")     
+        row.prop(arrow_length,'distance_value',text="Length")      
+
+        row = layout.row() 
+        row.label(text="Extend Line:")
+        row.prop(extend_first_line_amount,'distance_value',text="Line 1")     
+        row.prop(extend_second_line_amount,'distance_value',text="Line 2")     
+
+        row = layout.row()
+        row.label(text="Line Thickness:")
+        row.prop(line_thickness,'distance_value',text="")   
+
+        row = layout.row()
+        row.label(text="Flip Text:")
+        row.prop(self.obj_text.pyclone,'flip_x',text="X")            
+        row.prop(self.obj_text.pyclone,'flip_y',text="Y")               
