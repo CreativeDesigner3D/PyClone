@@ -665,6 +665,68 @@ class pc_assembly_OT_show_dimension_properties(Operator):
         self.dimension.draw_ui(context,layout)
 
 
+class pc_assembly_OT_make_assembly_static(Operator):
+    bl_idname = "pc_assembly.make_assembly_static"
+    bl_label = "Make Assembly Static"
+    bl_description = "This will apply all modifers and drivers for the assembly"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    update_all_assemblies: BoolProperty(name="Update All Assemblies")
+
+    def get_children_list(self,obj_bp,obj_list):
+        obj_list.append(obj_bp)
+        for obj in obj_bp.children:
+            self.get_children_list(obj,obj_list)
+        return obj_list
+        
+    def execute(self, context):
+        obj_list = []
+        if self.update_all_assemblies:
+            obj_list = bpy.data.objects
+        else:
+            obj_bp = bpy.data.objects[self.obj_bp_name]
+            obj_list = self.get_children_list(obj_bp,obj_list)
+
+        for obj in obj_list:
+            if obj.animation_data:
+                for driver in obj.animation_data.drivers:
+                    obj.driver_remove(driver.data_path)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+
+            if obj.type == 'MESH':
+                if obj.data.shape_keys:
+                    bpy.ops.object.shape_key_add(from_mix=True)
+                    for index, key in enumerate(obj.data.shape_keys.key_blocks):
+                        obj.active_shape_key_index = 0
+                        bpy.ops.object.shape_key_remove(all=False)                    
+                    
+            if obj.type == 'CURVE':
+                bpy.ops.object.convert(target='MESH')
+                
+            for mod in obj.modifiers:
+                bpy.ops.object.modifier_apply(modifier=mod.name)
+
+            obj.lock_location = (False,False,False)
+            obj.lock_scale = (False,False,False)
+            obj.lock_rotation = (False,False,False)
+
+        return {'FINISHED'}
+
+    def make_assembly_static(self,assembly):
+        pass
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self,'update_all_assemblies')
+
+
 classes = (
     pc_assembly_OT_create_new_assembly,
     pc_assembly_OT_delete_assembly,
@@ -677,7 +739,8 @@ classes = (
     pc_assembly_OT_create_assembly_layout,
     pc_assembly_OT_create_assembly_dimension,
     pc_assembly_OT_show_dimension_properties,
-    pc_assembly_OT_add_title_block
+    pc_assembly_OT_add_title_block,
+    pc_assembly_OT_make_assembly_static
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)
