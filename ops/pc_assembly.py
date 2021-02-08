@@ -146,6 +146,30 @@ class pc_assembly_OT_duplicate_assembly(Operator):
         return {'FINISHED'}
 
 
+class pc_assembly_OT_refresh_vertex_groups(Operator):
+    bl_idname = "pc_assembly.refresh_vertex_groups"
+    bl_label = "Refresh Vertex Groups"
+    bl_description = "This will refresh the vertex groups from the mesh hooks"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+    obj_mesh_name: StringProperty(name="Mesh Object Name")
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        if self.obj_bp_name in bpy.data.objects:
+            obj_bp = bpy.data.objects[self.obj_bp_name]
+            assembly = pc_types.Assembly(obj_bp)
+            obj_mesh = bpy.data.objects[self.obj_mesh_name]
+            for vgroup in obj_mesh.vertex_groups:
+                obj_mesh.vertex_groups.remove(group=vgroup)
+            assembly.update_vector_groups()
+        return {'FINISHED'}
+
+
 class pc_assembly_OT_add_object(Operator):
     bl_idname = "pc_assembly.add_object"
     bl_label = "Add Object to Assembly"
@@ -632,6 +656,7 @@ class pc_assembly_OT_add_title_block(bpy.types.Operator):
     def execute(self, context):
         title_block = pc_types.Title_Block()
         title_block.create_title_block()
+        title_block.obj_bp.rotation_euler.x = math.radians(90)
         return {'FINISHED'}
 
 
@@ -680,7 +705,7 @@ class pc_assembly_OT_make_assembly_static(Operator):
         for obj in obj_bp.children:
             self.get_children_list(obj,obj_list)
         return obj_list
-        
+
     def execute(self, context):
         obj_list = []
         if self.update_all_assemblies:
@@ -732,6 +757,7 @@ classes = (
     pc_assembly_OT_delete_assembly,
     pc_assembly_OT_select_base_point,
     pc_assembly_OT_duplicate_assembly,
+    pc_assembly_OT_refresh_vertex_groups,
     pc_assembly_OT_add_object,
     pc_assembly_OT_connect_mesh_to_hooks_in_assembly,
     pc_assembly_OT_create_assembly_script,

@@ -182,6 +182,9 @@ def draw_object_properties(context,layout,obj):
                     vcol.operator('pc_object.assign_verties_to_vertex_group',text="Assign to - " + vgroup.name + " (" + str(count) + ")").vertex_group_name = vgroup.name
                 vcol.separator()
                 vcol.operator('pc_assembly.connect_meshes_to_hooks_in_assembly',text='Connect Hooks',icon='HOOK').obj_name = context.active_object.name
+                props = vcol.operator('pc_assembly.refresh_vertex_groups',text="Refresh Vertex Groups",icon='FILE_REFRESH')
+                props.obj_bp_name = obj.parent.name
+                props.obj_mesh_name = obj.name
                 vcol.operator('pc_object.clear_vertex_groups',text='Clear All Vertex Group Assignments',icon='X').obj_name = context.active_object.name   
             else:
                 layout.operator('pc_object.toggle_edit_mode',text="Enter Edit Mode",icon='EDITMODE_HLT').obj_name = obj.name
