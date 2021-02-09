@@ -390,7 +390,7 @@ def draw_assembly_properties(context, layout, assembly):
 
         if scene_props.driver_tabs == 'PROMPTS':
             if len(assembly.obj_prompts.pyclone.prompts) == 0:
-                box.label('No Prompts')  
+                box.label(text='No Prompts')  
                 return    
 
             box.template_list("PC_UL_prompts"," ", assembly.obj_prompts.pyclone, "prompts", assembly.obj_prompts.pyclone, "prompt_index",rows=5,type='DEFAULT')
@@ -401,10 +401,9 @@ def draw_assembly_properties(context, layout, assembly):
 
             if prompt:
                 drivers = pyclone_utils.get_drivers(assembly.obj_prompts)
-                if len(drivers) == 0:
-                    box.operator('pc_driver.add_driver')
-                else:
-                    box.operator('pc_driver.remove_driver')
+
+                box.operator('pc_driver.add_driver')
+                box.operator('pc_driver.remove_driver')
                 for driver in drivers:
                     if driver.data_path == prompt.get_data_path():
                         pyclone_utils.draw_driver(box,assembly.obj_prompts,driver)  
