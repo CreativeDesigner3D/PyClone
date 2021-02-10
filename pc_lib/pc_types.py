@@ -1,5 +1,5 @@
 import bpy
-import os
+import os, math
 from . import pc_utils
 
 class Assembly:
@@ -137,6 +137,14 @@ class Assembly:
         self.obj_prompts.lock_rotation[2] = True           
         self.obj_prompts["obj_prompts"] = True
         self.coll.objects.link(self.obj_prompts)
+
+    def create_assembly_collection(self,name):
+        pc_utils.select_object_and_children(self.obj_bp)
+        bpy.ops.collection.create(name=name)
+
+        collection = bpy.data.collections[name]
+        collection.pyclone.assembly_bp = self.obj_bp
+        return collection
 
     def create_cube(self,name="Cube",size=(0,0,0)):
         """ This will create a cube mesh and assign mesh hooks
@@ -311,6 +319,116 @@ class Assembly:
             self.obj_z.location.z = value
         else:
             self.obj_z.pyclone.loc_z(expression,variables)                                                                      
+
+
+class Assembly_Layout():
+
+    VISIBLE_LINESET_NAME = "Visible Lines"
+    HIDDEN_LINESET_NAME = "Hidden Lines"
+    HIDDEN_LINE_DASH_PX = 10
+    HIDDEN_LINE_GAP_PX = 10
+
+    scene = None
+
+    def __init__(self,scene=None):
+        self.scene = scene
+
+    def create_linestyles(self):
+        linestyles = bpy.data.linestyles
+        linestyles.new(self.VISIBLE_LINESET_NAME)
+        
+        hidden_linestyle = linestyles.new(self.HIDDEN_LINESET_NAME)
+        hidden_linestyle.use_dashed_line = True
+        hidden_linestyle.dash1 = self.HIDDEN_LINE_DASH_PX
+        hidden_linestyle.dash2 = self.HIDDEN_LINE_DASH_PX
+        hidden_linestyle.dash3 = self.HIDDEN_LINE_DASH_PX
+        hidden_linestyle.gap1 = self.HIDDEN_LINE_GAP_PX
+        hidden_linestyle.gap2 = self.HIDDEN_LINE_GAP_PX
+        hidden_linestyle.gap3 = self.HIDDEN_LINE_GAP_PX
+
+    def create_linesets(self):
+        temp_dim = Dimension()
+        f_settings = self.scene.view_layers[0].freestyle_settings
+        linestyles = bpy.data.linestyles
+        
+        visible_lineset = f_settings.linesets.new(self.VISIBLE_LINESET_NAME)
+        visible_lineset.linestyle = linestyles[self.VISIBLE_LINESET_NAME]
+        visible_lineset.select_by_collection = True
+        visible_lineset.collection_negation = 'EXCLUSIVE'
+        visible_lineset.collection = temp_dim.get_dimension_collection()
+
+        hidden_lineset = f_settings.linesets.new(self.HIDDEN_LINESET_NAME)
+        hidden_lineset.linestyle = linestyles[self.HIDDEN_LINESET_NAME]
+        
+        hidden_lineset.select_by_visibility = True
+        hidden_lineset.visibility = 'HIDDEN'
+        hidden_lineset.select_by_edge_types = True
+        hidden_lineset.select_by_face_marks = False
+        hidden_lineset.select_by_collection = True
+        hidden_lineset.select_by_image_border = False
+        
+        hidden_lineset.select_silhouette = True
+        hidden_lineset.select_border = False
+        hidden_lineset.select_contour = False
+        hidden_lineset.select_suggestive_contour = False
+        hidden_lineset.select_ridge_valley = False
+        hidden_lineset.select_crease = False
+        hidden_lineset.select_edge_mark = True
+        hidden_lineset.select_external_contour = False
+        hidden_lineset.select_material_boundary = False
+        hidden_lineset.collection_negation = 'EXCLUSIVE'
+        hidden_lineset.collection = temp_dim.get_dimension_collection()
+
+    def clear_unused_linestyles(self):
+        for linestyle in bpy.data.linestyles:
+            if linestyle.users == 0:
+                bpy.data.linestyles.remove(linestyle)
+
+    def setup_assembly_layout(self):
+        self.create_linestyles()
+
+        props = self.scene.pyclone
+        props.is_view_scene = True
+        self.scene.render.use_freestyle = True
+        view_settings = self.scene.view_settings
+        view_settings.view_transform = 'Standard'
+        view_settings.look = 'High Contrast'
+        view_settings.exposure = 4
+
+        self.create_linesets()
+
+    def add_assembly_view(self,collection):
+        obj = bpy.data.objects.new(collection.name,None)
+        obj.instance_type = 'COLLECTION'
+        obj.instance_collection = collection
+        obj.empty_display_size = .01
+        obj.location = (0,0,0)
+        obj.rotation_euler = (0,0,0)
+        self.scene.view_layers[0].active_layer_collection.collection.objects.link(obj)  
+        # bpy.context.view_layer.active_layer_collection.collection.objects.link(obj)   
+        obj.select_set(True)
+        obj.pyclone.is_view_object = True
+        return obj
+
+    def add_layout_camera(self):
+        cam = bpy.data.cameras.new('Camera ' + self.scene.name)
+        cam.type = 'ORTHO'
+        cam_obj = bpy.data.objects.new('Camera ' + self.scene.name,cam)
+        # cam_obj.pyclone.is_view_object = True
+        cam_obj.location.x = 0
+        cam_obj.location.y = -5
+        cam_obj.location.z = 0
+        cam_obj.rotation_euler.x = math.radians(90)
+        cam_obj.rotation_euler.y = 0
+        cam_obj.rotation_euler.z = 0
+        self.scene.view_layers[0].active_layer_collection.collection.objects.link(cam_obj)  
+        # bpy.context.view_layer.active_layer_collection.collection.objects.link(cam_obj)   
+        self.scene.camera = cam_obj
+
+        bpy.ops.view3d.camera_to_view_selected()
+        bpy.ops.view3d.view_camera()
+        bpy.ops.view3d.view_center_camera()        
+
 
 
 class Annotation(Assembly):

@@ -503,9 +503,9 @@ class PC_Window_Manager_Props(bpy.types.PropertyGroup):
 def update_page_scale(self,context):
     cam_obj = context.scene.camera
     cam_obj.data.ortho_scale = .279
-    cam_obj.location.x = .1395
+    cam_obj.location.x = 0.139504
     cam_obj.location.y = -2.0573
-    cam_obj.location.z = 0.0784
+    cam_obj.location.z = 0.078469
 
     #TODO: SETUP ALL DIFFERENT OBJECT SCALE
     if self.page_scale == '1:1':
@@ -520,7 +520,7 @@ def update_page_scale(self,context):
         scale = (.08332,.08332,.08332)
 
     for obj in context.visible_objects:
-        if obj.pyclone.is_view_object and obj.type == 'EMPTY' and obj.instance_type == 'COLLECTION':
+        if obj.pyclone.is_view_object and obj.type == 'EMPTY':
             obj.scale = scale
 
 class PC_Scene_Props(PropertyGroup):

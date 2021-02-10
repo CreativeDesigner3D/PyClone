@@ -360,87 +360,11 @@ class pc_assembly_OT_create_assembly_layout(Operator):
     include_top_view: BoolProperty(name="Include Top View")
     include_side_view: BoolProperty(name="Include Side View")
 
-    VISIBLE_LINESET_NAME = "Visible Lines"
-    HIDDEN_LINESET_NAME = "Hidden Lines"
-    HIDDEN_LINE_DASH_PX = 10
-    HIDDEN_LINE_GAP_PX = 10
-
     @classmethod
     def poll(cls, context):
         return True
 
-    def create_linestyles(self):
-        linestyles = bpy.data.linestyles
-        linestyles.new(self.VISIBLE_LINESET_NAME)
-        
-        hidden_linestyle = linestyles.new(self.HIDDEN_LINESET_NAME)
-        hidden_linestyle.use_dashed_line = True
-        hidden_linestyle.dash1 = self.HIDDEN_LINE_DASH_PX
-        hidden_linestyle.dash2 = self.HIDDEN_LINE_DASH_PX
-        hidden_linestyle.dash3 = self.HIDDEN_LINE_DASH_PX
-        hidden_linestyle.gap1 = self.HIDDEN_LINE_GAP_PX
-        hidden_linestyle.gap2 = self.HIDDEN_LINE_GAP_PX
-        hidden_linestyle.gap3 = self.HIDDEN_LINE_GAP_PX
-
-    def create_linesets(self, scene):
-        temp_dim = pc_types.Dimension()
-        f_settings = scene.view_layers[0].freestyle_settings
-        linestyles = bpy.data.linestyles
-        
-        visible_lineset = f_settings.linesets.new(self.VISIBLE_LINESET_NAME)
-        visible_lineset.linestyle = linestyles[self.VISIBLE_LINESET_NAME]
-        visible_lineset.select_by_collection = True
-        visible_lineset.collection_negation = 'EXCLUSIVE'
-        visible_lineset.collection = temp_dim.get_dimension_collection()
-
-        hidden_lineset = f_settings.linesets.new(self.HIDDEN_LINESET_NAME)
-        hidden_lineset.linestyle = linestyles[self.HIDDEN_LINESET_NAME]
-        
-        hidden_lineset.select_by_visibility = True
-        hidden_lineset.visibility = 'HIDDEN'
-        hidden_lineset.select_by_edge_types = True
-        hidden_lineset.select_by_face_marks = False
-        hidden_lineset.select_by_collection = True
-        hidden_lineset.select_by_image_border = False
-        
-        hidden_lineset.select_silhouette = True
-        hidden_lineset.select_border = False
-        hidden_lineset.select_contour = False
-        hidden_lineset.select_suggestive_contour = False
-        hidden_lineset.select_ridge_valley = False
-        hidden_lineset.select_crease = False
-        hidden_lineset.select_edge_mark = True
-        hidden_lineset.select_external_contour = False
-        hidden_lineset.select_material_boundary = False
-        hidden_lineset.collection_negation = 'EXCLUSIVE'
-        hidden_lineset.collection = temp_dim.get_dimension_collection()
-
-    def clear_unused_linestyles(self):
-        for linestyle in bpy.data.linestyles:
-            if linestyle.users == 0:
-                bpy.data.linestyles.remove(linestyle)
-
-    def create_view_scene(self,context):
-        world = context.scene.world
-        bpy.ops.scene.new(type='EMPTY')
-        new_scene = context.scene
-        props = pyclone_utils.get_scene_props(new_scene)
-        props.is_view_scene = True
-        new_scene.name = self.view_name
-        new_scene.world = world
-        new_scene.render.use_freestyle = True
-        view_settings = new_scene.view_settings
-        view_settings.view_transform = 'Standard'
-        view_settings.look = 'High Contrast'
-        view_settings.exposure = 4
-
-        self.create_linesets(context.scene)
-
     def execute(self, context):
-        self.create_linestyles()
-
-        bpy.ops.object.select_all(action='DESELECT')
-
         if self.obj_bp_name in bpy.data.objects:
             obj_bp = bpy.data.objects[self.obj_bp_name]
 
@@ -450,88 +374,26 @@ class pc_assembly_OT_create_assembly_layout(Operator):
             a_height = math.fabs(assembly.obj_z.location.z)
             view_gap = .5
 
-            #CREATE COLLECTION FROM ASSEMBLY
-            pc_utils.select_object_and_children(obj_bp)
-            bpy.ops.collection.create(name=self.view_name)
+            collection = assembly.create_assembly_collection(self.view_name)
 
-            collection = bpy.data.collections[self.view_name]
-            collection.pyclone.assembly_bp = obj_bp
-
-            #CREATE NEW SCENE
-            self.create_view_scene(context)
-
-            #INSTANCE ASSEMBLY COLLECTION
-            # bpy.ops.object.collection_instance_add(collection=self.view_name)
-
-            # coll_obj = context.object
-            # obj_props = pyclone_utils.get_object_props(coll_obj)
-            # obj_props.is_view_object = True
-
+            bpy.ops.scene.new(type='EMPTY')
+            assembly_layout = pc_types.Assembly_Layout(context.scene)
+            assembly_layout.setup_assembly_layout()
             if self.include_front_view:
-                front_obj = bpy.data.objects.new(self.view_name + ' - Front',None)
-                front_obj.instance_type = 'COLLECTION'
-                front_obj.instance_collection = collection
-                front_obj.empty_display_size = .01
-                # front_obj.show_instancer_for_viewport = False
-                front_obj.location = (0,0,0)
-                front_obj.rotation_euler = (0,0,0)
-                context.view_layer.active_layer_collection.collection.objects.link(front_obj)   
-                front_obj.select_set(True)
-                obj_props = pyclone_utils.get_object_props(front_obj)
-                obj_props.is_view_object = True
-
+                obj_front = assembly_layout.add_assembly_view(collection)
+                obj_front.name = collection.name + " - Front"
             if self.include_side_view:
-                side_obj = bpy.data.objects.new(self.view_name + ' - Side',None)
-                side_obj.instance_type = 'COLLECTION'
-                side_obj.instance_collection = collection
-                side_obj.empty_display_size = .01
-                # side_obj.show_instancer_for_viewport = False
-                side_obj.location = (a_width + a_depth + view_gap,0,0)
-                side_obj.rotation_euler = (0,0,math.radians(-90))
-                context.view_layer.active_layer_collection.collection.objects.link(side_obj) 
-                side_obj.select_set(True)  
-                obj_props = pyclone_utils.get_object_props(side_obj)
-                obj_props.is_view_object = True
-
+                obj_side = assembly_layout.add_assembly_view(collection)
+                obj_side.name = collection.name + " - Side"
+                obj_side.location = (a_width + a_depth + view_gap,0,0)
+                obj_side.rotation_euler = (0,0,math.radians(-90))
             if self.include_top_view:
-                top_obj = bpy.data.objects.new(self.view_name + ' - Top',None)
-                top_obj.instance_type = 'COLLECTION'
-                top_obj.instance_collection = collection
-                top_obj.empty_display_size = .01
-                # top_obj.show_instancer_for_viewport = False
-                top_obj.location = (0,0,a_height + a_depth + view_gap)
-                top_obj.rotation_euler = (math.radians(90),0,0)
-                context.view_layer.active_layer_collection.collection.objects.link(top_obj) 
-                top_obj.select_set(True)  
-                obj_props = pyclone_utils.get_object_props(top_obj)
-                obj_props.is_view_object = True
+                obj_top = assembly_layout.add_assembly_view(collection)     
+                obj_top.name = collection.name + " - Top"          
+                obj_top.location = (0,0,a_height + a_depth + view_gap)     
+                obj_top.rotation_euler = (math.radians(90),0,0)    
+            assembly_layout.add_layout_camera()        
 
-            #TODO: Create dimensions
-            #Append Data
-
-            #CREATE CAMERA
-            cam = bpy.data.cameras.new('Camera ' + self.view_name)
-            cam.type = 'ORTHO'
-            cam_obj = bpy.data.objects.new('Camera ' + self.view_name,cam)
-            obj_props = pyclone_utils.get_object_props(cam_obj)
-            obj_props.is_view_object = True
-            cam_obj.location.x = 0
-            cam_obj.location.y = -5
-            cam_obj.location.z = 0
-            cam_obj.rotation_euler.x = math.radians(90)
-            cam_obj.rotation_euler.y = 0
-            cam_obj.rotation_euler.z = 0
-            context.view_layer.active_layer_collection.collection.objects.link(cam_obj)   
-            context.scene.camera = cam_obj
-
-            bpy.ops.view3d.camera_to_view_selected()
-            bpy.ops.view3d.view_camera()
-            bpy.ops.view3d.view_center_camera()
-
-            self.clear_unused_linestyles()
-
-            #CHANGE RENDERING SETTINGS FOR FREE STYLE
-        
         return {'FINISHED'}
 
     def invoke(self,context,event):
@@ -636,26 +498,10 @@ class pc_assembly_OT_add_title_block(bpy.types.Operator):
     def poll(cls, context):
         return True
 
-    # def get_selected_collection(self,context):
-    #     sel_obj = context.object
-    #     if sel_obj.instance_type == 'COLLECTION':
-    #         return sel_obj.instance_collection
-
-    # def get_title_block(self,context):
-    #     collection = self.get_selected_collection(context)
-
-    #     ROOT_PATH = os.path.dirname(__file__)
-    #     PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Title_Block.blend")
-
-    #     with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
-    #         data_to.objects = data_from.objects
-
-    #     for obj in data_to.objects:
-    #         collection.objects.link(obj)
-
     def execute(self, context):
         title_block = pc_types.Title_Block()
         title_block.create_title_block()
+        title_block.obj_bp.pyclone.is_view_object = True
         title_block.obj_bp.rotation_euler.x = math.radians(90)
         return {'FINISHED'}
 
