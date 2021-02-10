@@ -350,6 +350,16 @@ class Title_Block(Annotation):
             data_to.objects = data_from.objects
 
         for obj in data_to.objects:
+            if "obj_bp" in obj:
+                self.obj_bp = obj            
+            if "obj_x" in obj:
+                self.obj_x = obj
+            if "obj_y" in obj:
+                self.obj_y = obj           
+            if "obj_z" in obj:
+                self.obj_z = obj
+            if "obj_prompts" in obj:
+                self.obj_prompts = obj                
             collection.objects.link(obj)
 
 
