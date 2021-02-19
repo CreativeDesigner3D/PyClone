@@ -139,6 +139,7 @@ class Assembly:
         self.coll.objects.link(self.obj_prompts)
 
     def create_assembly_collection(self,name):
+        bpy.ops.object.select_all(action='DESELECT')
         pc_utils.select_object_and_children(self.obj_bp)
         bpy.ops.collection.create(name=name)
 
@@ -329,6 +330,7 @@ class Assembly_Layout():
     HIDDEN_LINE_GAP_PX = 10
 
     scene = None
+    dimension_collection = None
 
     def __init__(self,scene=None):
         self.scene = scene
@@ -347,7 +349,6 @@ class Assembly_Layout():
         hidden_linestyle.gap3 = self.HIDDEN_LINE_GAP_PX
 
     def create_linesets(self):
-        temp_dim = Dimension()
         f_settings = self.scene.view_layers[0].freestyle_settings
         linestyles = bpy.data.linestyles
         
@@ -355,7 +356,7 @@ class Assembly_Layout():
         visible_lineset.linestyle = linestyles[self.VISIBLE_LINESET_NAME]
         visible_lineset.select_by_collection = True
         visible_lineset.collection_negation = 'EXCLUSIVE'
-        visible_lineset.collection = temp_dim.get_dimension_collection()
+        visible_lineset.collection = self.dimension_collection
 
         hidden_lineset = f_settings.linesets.new(self.HIDDEN_LINESET_NAME)
         hidden_lineset.linestyle = linestyles[self.HIDDEN_LINESET_NAME]
@@ -377,7 +378,7 @@ class Assembly_Layout():
         hidden_lineset.select_external_contour = False
         hidden_lineset.select_material_boundary = False
         hidden_lineset.collection_negation = 'EXCLUSIVE'
-        hidden_lineset.collection = temp_dim.get_dimension_collection()
+        hidden_lineset.collection = self.dimension_collection
 
     def clear_unused_linestyles(self):
         for linestyle in bpy.data.linestyles:
@@ -386,6 +387,9 @@ class Assembly_Layout():
 
     def setup_assembly_layout(self):
         self.create_linestyles()
+
+        self.dimension_collection = bpy.data.collections.new(self.scene.name + ' DIM')
+        bpy.context.view_layer.active_layer_collection.collection.children.link(self.dimension_collection)
 
         props = self.scene.pyclone
         props.is_view_scene = True
@@ -414,7 +418,6 @@ class Assembly_Layout():
         cam = bpy.data.cameras.new('Camera ' + self.scene.name)
         cam.type = 'ORTHO'
         cam_obj = bpy.data.objects.new('Camera ' + self.scene.name,cam)
-        # cam_obj.pyclone.is_view_object = True
         cam_obj.location.x = 0
         cam_obj.location.y = -5
         cam_obj.location.z = 0
@@ -430,26 +433,7 @@ class Assembly_Layout():
         bpy.ops.view3d.view_center_camera()        
 
 
-
-class Annotation(Assembly):
-
-    def __init__(self,obj_bp=None):
-        super().__init__(obj_bp=obj_bp)  
-        if self.obj_bp:
-            for child in obj_bp.children:
-                if child.type == 'FONT':
-                    self.obj_text = child    
-
-    def get_dimension_collection(self):
-        if 'DIMENSIONS' in bpy.data.collections:
-            return bpy.data.collections['DIMENSIONS']
-        else:
-            coll = bpy.data.collections.new('DIMENSIONS')
-            bpy.context.view_layer.active_layer_collection.collection.children.link(coll)
-            return coll
-
-
-class Title_Block(Annotation):
+class Title_Block(Assembly):
 
     def __init__(self,obj_bp=None):
         super().__init__(obj_bp=obj_bp)  
@@ -458,8 +442,8 @@ class Title_Block(Annotation):
                 if child.type == 'FONT':
                     self.obj_text = child   
 
-    def create_title_block(self):
-        collection = self.get_dimension_collection()
+    def create_title_block(self,layout_view):
+        collection = layout_view.dimension_collection
 
         ROOT_PATH = os.path.dirname(__file__)
         PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Title_Block.blend")
@@ -481,7 +465,7 @@ class Title_Block(Annotation):
             collection.objects.link(obj)
 
 
-class Dimension(Annotation):
+class Dimension(Assembly):
 
     obj_text = None
 
@@ -498,15 +482,14 @@ class Dimension(Annotation):
     def flip_y(self):
         self.obj_text.scale.y = -1
 
-    def create_dimension(self):
-        ROOT_PATH = os.path.dirname(__file__)
-        PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Dimension_Arrow.blend")
+    def create_dimension(self,layout_view):
+        PATH = os.path.join(os.path.dirname(__file__),'assets',"Dimension_Arrow.blend")
 
         with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
             data_to.objects = data_from.objects
 
         obj_bp = None
-        collection = self.get_dimension_collection()
+        collection = layout_view.dimension_collection
         for obj in data_to.objects:
             if "obj_bp" in obj:
                 self.obj_bp = obj            
