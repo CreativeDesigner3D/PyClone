@@ -366,6 +366,7 @@ class pc_assembly_OT_create_assembly_layout(Operator):
 
     def execute(self, context):
         if self.obj_bp_name in bpy.data.objects:
+            model_scene = context.scene
             obj_bp = bpy.data.objects[self.obj_bp_name]
 
             assembly = pc_types.Assembly(obj_bp)
@@ -392,7 +393,8 @@ class pc_assembly_OT_create_assembly_layout(Operator):
                 obj_top.name = collection.name + " - Top"          
                 obj_top.location = (0,0,a_height + a_depth + view_gap)     
                 obj_top.rotation_euler = (math.radians(90),0,0)    
-            assembly_layout.add_layout_camera()        
+            assembly_layout.add_layout_camera()
+            assembly_layout.scene.world = model_scene.world
 
         return {'FINISHED'}
 
@@ -445,10 +447,11 @@ class pc_assembly_OT_create_assembly_dimension(bpy.types.Operator):
         sel_obj = context.object
         collection = self.get_selected_collection(context)
         assembly = self.get_assembly_collection(collection)
+        assembly_layout = pc_types.Assembly_Layout(context.scene)
 
         if self.add_x_dimension:
             dim = pc_types.Dimension()
-            dim.create_dimension()
+            dim.create_dimension(assembly_layout)
             dim.obj_bp.rotation_euler.x = math.radians(-90)
             dim.obj_bp.rotation_euler.y = 0
             dim.obj_y.location.y = .2
@@ -459,7 +462,7 @@ class pc_assembly_OT_create_assembly_dimension(bpy.types.Operator):
 
         if self.add_y_dimension:
             dim = pc_types.Dimension()
-            dim.create_dimension()
+            dim.create_dimension(assembly_layout)
             dim.obj_bp.rotation_euler.x = math.radians(90)
             dim.obj_bp.rotation_euler.y = math.radians(0)
             dim.obj_bp.rotation_euler.z = math.radians(-90)
@@ -471,7 +474,7 @@ class pc_assembly_OT_create_assembly_dimension(bpy.types.Operator):
 
         if self.add_z_dimension:
             dim = pc_types.Dimension()
-            dim.create_dimension()
+            dim.create_dimension(assembly_layout)
             dim.obj_bp.rotation_euler.x = math.radians(90)
             dim.obj_bp.rotation_euler.y = math.radians(-90)
             dim.obj_y.location.y = .2
@@ -499,8 +502,10 @@ class pc_assembly_OT_add_title_block(bpy.types.Operator):
         return True
 
     def execute(self, context):
+        assembly_layout = pc_types.Assembly_Layout(context.scene)
+
         title_block = pc_types.Title_Block()
-        title_block.create_title_block()
+        title_block.create_title_block(assembly_layout)
         title_block.obj_bp.pyclone.is_view_object = True
         title_block.obj_bp.rotation_euler.x = math.radians(90)
         return {'FINISHED'}

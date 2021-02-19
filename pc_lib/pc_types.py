@@ -334,6 +334,10 @@ class Assembly_Layout():
 
     def __init__(self,scene=None):
         self.scene = scene
+        for collection in self.scene.collection.children:
+            if collection.pyclone.is_dimension_collection:
+                self.dimension_collection = collection
+                break
 
     def create_linestyles(self):
         linestyles = bpy.data.linestyles
@@ -389,6 +393,7 @@ class Assembly_Layout():
         self.create_linestyles()
 
         self.dimension_collection = bpy.data.collections.new(self.scene.name + ' DIM')
+        self.dimension_collection.pyclone.is_dimension_collection = True
         bpy.context.view_layer.active_layer_collection.collection.children.link(self.dimension_collection)
 
         props = self.scene.pyclone
@@ -445,8 +450,7 @@ class Title_Block(Assembly):
     def create_title_block(self,layout_view):
         collection = layout_view.dimension_collection
 
-        ROOT_PATH = os.path.dirname(__file__)
-        PATH = os.path.join(os.path.dirname(ROOT_PATH),'assets',"Title_Block.blend")
+        PATH = os.path.join(os.path.dirname(__file__),'assets',"Title_Block.blend")
 
         with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
             data_to.objects = data_from.objects

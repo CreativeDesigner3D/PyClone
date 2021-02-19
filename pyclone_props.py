@@ -462,7 +462,8 @@ class PC_Object_Props(PropertyGroup):
 
 class PC_Collection_Props(PropertyGroup):
     assembly_bp: PointerProperty(name="Assembly Base Point",type=bpy.types.Object)
-
+    is_dimension_collection: BoolProperty(name="Is Dimension Collection",default=False)
+    
     @classmethod
     def register(cls):
         bpy.types.Collection.pyclone = PointerProperty(name="PyClone",description="PyClone Properties",type=cls)

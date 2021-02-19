@@ -53,11 +53,19 @@ class VIEW3D_PT_pc_layout_view(Panel):
             row = box.row()
             row.label(text="Page Size")
             row.prop(scene_props,'page_size',text="")
+
+            row = box.row()
+            row.label(text="Page Scale Unit")
+            row.prop(scene_props,'page_scale_unit_type',text="")
+
             row = box.row()
             # row.label(text="Fit to Paper")            
             row.prop(scene_props,'fit_to_paper',text="Fit to Paper")
             if not scene_props.fit_to_paper:
-                row.prop(scene_props,'page_scale',text="")
+                if scene_props.page_scale_unit_type == 'METRIC':
+                    row.prop(scene_props,'metric_page_scale',text="")
+                else:
+                    row.prop(scene_props,'imperial_page_scale',text="")
             row = box.row()
             row.label(text="Print Style")                   
             row.prop(scene_props,'page_style',text="")
@@ -76,8 +84,6 @@ class VIEW3D_PT_pc_layout_view(Panel):
             box.operator('pc_assembly.create_assembly_dimension',text="Add Dimension",icon='TRACKING_FORWARDS_SINGLE')
             box.operator('pc_assembly.create_assembly_dimension',text="Add Annotation",icon='CON_ROTLIMIT')
             box.operator('pc_assembly.add_title_block',text="Add Title Block",icon='MENU_PANEL')
-
-            #ADD TITLE BLOCK
 
         else:
             box = layout.box()
