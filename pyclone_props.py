@@ -501,23 +501,36 @@ class PC_Window_Manager_Props(bpy.types.PropertyGroup):
         del bpy.types.WindowManager.pyclone    
 
 def update_page_scale(self,context):
+    scene = context.scene
+    scene.render.resolution_x = 1920
+    scene.render.resolution_y = 1486
     cam_obj = context.scene.camera
     cam_obj.data.ortho_scale = .279
-    cam_obj.location.x = 0.139504
+    cam_obj.location.x = 0.13951
     cam_obj.location.y = -2.0573
-    cam_obj.location.z = 0.078469
+    cam_obj.location.z = 0.10793
 
     #TODO: SETUP ALL DIFFERENT OBJECT SCALE
-    if self.page_scale == '1:1':
-        scale = (1,1,1)
-    elif self.page_scale == '1/2in_1ft':
-        scale = (0.04166,0.04166,0.04166)    
-    elif self.page_scale == '1/4in_1ft':
-        scale = (0.02083,0.02083,0.02083)    
-    elif self.page_scale == '1in_1ft':
-        scale = (.08332,.08332,.08332)    
+    if self.page_scale_unit_type == 'IMPERIAL':
+        if self.imperial_page_scale == '1:1':
+            scale = (1,1,1)
+        elif self.imperial_page_scale == '1/2in_1ft':
+            scale = (0.04166,0.04166,0.04166)    
+        elif self.imperial_page_scale == '1/4in_1ft':
+            scale = (0.02083,0.02083,0.02083)    
+        elif self.imperial_page_scale == '1in_1ft':
+            scale = (.08332,.08332,.08332)    
+        else:
+            scale = (.08332,.08332,.08332)
     else:
-        scale = (.08332,.08332,.08332)
+        if self.metric_page_scale == '1:1':
+            scale = (1,1,1)
+        elif self.metric_page_scale == '1:30':
+            scale = (.03,.03,.03)
+        elif self.metric_page_scale == '1:50':
+            scale = (.05,.05,.05)
+        else:
+            scale = (.01,.01,.01)
 
     for obj in context.visible_objects:
         if obj.pyclone.is_view_object and obj.type == 'EMPTY':
@@ -569,7 +582,20 @@ class PC_Scene_Props(PropertyGroup):
 
     fit_to_paper: BoolProperty(name="Fit to Paper",default=True,update=update_page_scale)
 
-    page_scale: EnumProperty(name="Page Scale",
+    page_scale_unit_type: EnumProperty(name="Page Scale Unit Type",
+                            items=[('IMPERIAL',"Imperial","Imperial"),
+                                   ('METRIC',"Metric","Metric")],
+                            default='IMPERIAL')
+
+    metric_page_scale: EnumProperty(name="Metric Page Scale",
+                            items=[('1:1',"1:1","1:1"),
+                                   ('1:30',"1:30","1:1"),
+                                   ('1:50',"1:50","1:1"),
+                                   ('1:100',"1:100","1:1")],
+                            default='1:1',
+                            update=update_page_scale)
+
+    imperial_page_scale: EnumProperty(name="Imperial Page Scale",
                             items=[('1:1',"1:1","1:1"),
                                    ('1/4in_1ft',"1/4 in = 1 ft","1:1"),
                                    ('3/8in_1ft',"3/8 in = 1 ft","1:1"),
