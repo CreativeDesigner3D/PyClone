@@ -33,10 +33,19 @@ class PC_UL_calculators(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         layout.label(text=item.name)
 
+class PC_UL_scenes(UIList):
+    
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        if not item.pyclone.is_view_scene:
+            layout.label(text="Model Space",icon='SNAP_VOLUME')
+        else:
+            layout.label(text=item.name,icon='SNAP_FACE')
+
 classes = (
     PC_UL_combobox,
     PC_UL_prompts,
     PC_UL_calculators,
+    PC_UL_scenes
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

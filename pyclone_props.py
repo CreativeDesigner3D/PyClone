@@ -472,9 +472,18 @@ class PC_Collection_Props(PropertyGroup):
     def unregister(cls):
         del bpy.types.Collection.pyclone
 
+def update_scene_index(self,context):
+    context.window.scene = bpy.data.scenes[self.scene_index]
+    if context.window.scene.pyclone.is_view_scene:
+
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.spaces[0].region_3d.view_perspective = 'CAMERA'        
 
 class PC_Window_Manager_Props(bpy.types.PropertyGroup):
     libraries: CollectionProperty(name="Libraries",type=Library)
+
+    scene_index: IntProperty(name="Scene Index",update=update_scene_index)
 
     def add_library(self,name,activate_id,drop_id,icon):
         lib = self.libraries.add()
@@ -503,13 +512,15 @@ class PC_Window_Manager_Props(bpy.types.PropertyGroup):
 
 def update_page_scale(self,context):
     scene = context.scene
-    scene.render.resolution_x = 1920
-    scene.render.resolution_y = 1486
-    cam_obj = context.scene.camera
-    cam_obj.data.ortho_scale = .279
-    cam_obj.location.x = 0.13951
-    cam_obj.location.y = -2.0573
-    cam_obj.location.z = 0.10793
+
+    if self.page_size == 'LETTER':
+        scene.render.resolution_x = 1920
+        scene.render.resolution_y = 1486
+        cam_obj = context.scene.camera
+        cam_obj.data.ortho_scale = .279
+        cam_obj.location.x = 0.13951
+        cam_obj.location.y = -2.0573
+        cam_obj.location.z = 0.10793
 
     #TODO: SETUP ALL DIFFERENT OBJECT SCALE
     if self.page_scale_unit_type == 'IMPERIAL':
@@ -544,6 +555,8 @@ class PC_Scene_Props(PropertyGroup):
                                        ('OBJECTS',"Objects","Show the Objects"),
                                        ('LOGIC',"Logic","Show the Assembly Logic")],
                                 default='MAIN')
+
+    
 
     driver_tabs: EnumProperty(name="Driver Tabs",
                               items=[('LOC_X',"Location X","Show the X Location Driver"),

@@ -1,6 +1,6 @@
 import bpy
 import os, math
-from . import pc_utils
+from . import pc_utils, pc_unit
 
 class Assembly:
 
@@ -414,7 +414,6 @@ class Assembly_Layout():
         obj.location = (0,0,0)
         obj.rotation_euler = (0,0,0)
         self.scene.view_layers[0].active_layer_collection.collection.objects.link(obj)  
-        # bpy.context.view_layer.active_layer_collection.collection.objects.link(obj)   
         obj.select_set(True)
         obj.pyclone.is_view_object = True
         return obj
@@ -423,14 +422,15 @@ class Assembly_Layout():
         cam = bpy.data.cameras.new('Camera ' + self.scene.name)
         cam.type = 'ORTHO'
         cam_obj = bpy.data.objects.new('Camera ' + self.scene.name,cam)
-        cam_obj.location.x = 0
-        cam_obj.location.y = -5
-        cam_obj.location.z = 0
+        cam_obj.location.x = 0.13951
+        cam_obj.location.y = -2.0573
+        cam_obj.location.z = 0.10793
         cam_obj.rotation_euler.x = math.radians(90)
         cam_obj.rotation_euler.y = 0
         cam_obj.rotation_euler.z = 0
         self.scene.view_layers[0].active_layer_collection.collection.objects.link(cam_obj)  
-        # bpy.context.view_layer.active_layer_collection.collection.objects.link(cam_obj)   
+        self.scene.render.resolution_x = 1920
+        self.scene.render.resolution_y = 1486
         self.scene.camera = cam_obj
 
         bpy.ops.view3d.camera_to_view_selected()
@@ -517,9 +517,13 @@ class Dimension(Assembly):
         self.get_prompt("Arrow Length").set_value(.03)
 
     def update_dim_text(self):
-        text = str(round(self.obj_x.location.x,2))
-        self.obj_text.data.body = text
-        self.obj_bp.location = self.obj_bp.location #FORCE UPDATE
+        #TODO: Setup all unit types
+        text = str(round(pc_unit.meter_to_inch(self.obj_x.location.x),2))
+        self.obj_text.data.body = text + '"'
+        bpy.context.view_layer.update()
+        # self.obj_text.location = self.obj_text.location #FORCE UPDATE
+        # self.obj_bp.location = self.obj_bp.location #FORCE UPDATE
+        # print('TEXT DIM X',self.obj_text.dimensions.x + .05)
         text_width = self.get_prompt("Text Width")
         text_width.set_value(self.obj_text.dimensions.x + .05)
         for child in self.obj_bp.children:

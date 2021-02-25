@@ -39,15 +39,19 @@ class VIEW3D_PT_pc_layout_view(Panel):
     def draw_camera_settings(self,context,layout):
         scene = context.scene
         rd = scene.render
-
+        wm_props = context.window_manager.pyclone
         scene_props = pyclone_utils.get_scene_props(scene)
         box = layout.box()
-        row = box.row(align=True)
-        row.scale_y = 1.3
-        row.operator('render.render',text="Go Back to Model",icon='BACK').use_viewport=True
-        row.operator('render.render',text="Render",icon='SCENE').use_viewport=True
+
+        box.label(text="Layout View List")
+        box.template_list("PC_UL_scenes"," ", bpy.data, "scenes", wm_props, "scene_index",rows=5,type='DEFAULT')
 
         if scene_props.is_view_scene:
+            row = box.row(align=True)
+            row.scale_y = 1.3   
+            row.operator('render.render',text="Render",icon='SCENE').use_viewport=True         
+            row.operator('pc_assembly.create_pdf_of_assembly_views',text="Create PDF",icon='FILE_BLANK')
+            
             box = layout.box()
             box.label(text="Page Setup",icon='FILE')
             row = box.row()
@@ -86,11 +90,11 @@ class VIEW3D_PT_pc_layout_view(Panel):
             box.operator('pc_assembly.add_title_block',text="Add Title Block",icon='MENU_PANEL')
 
         else:
-            box = layout.box()
-            box.label(text="Dimensions and Annotations",icon='DRIVER_DISTANCE')               
-            box.operator('pc_assembly.create_assembly_dimension',text="Add Dimension",icon='TRACKING_FORWARDS_SINGLE')
-            box.operator('pc_assembly.create_assembly_dimension',text="Add Annotation",icon='CON_ROTLIMIT')
-            box.operator('pc_assembly.add_title_block',text="Add Title Block",icon='MENU_PANEL')
+            pass
+            
+            # box.template_list("PC_UL_scenes"," ", bpy.data, "scenes", scene_props, "scene_index",rows=5,type='DEFAULT')
+
+
             # box.prop(cam_obj.data,'ortho_scale',text="View Scale")
             
             # col = box.column(align=True)
@@ -99,25 +103,27 @@ class VIEW3D_PT_pc_layout_view(Panel):
             # row.prop(rd, "resolution_x", text="X")
             # row.prop(rd, "resolution_y", text="Y")
 
+
     def draw(self, context):
         layout = self.layout
         scene = context.scene
         rd = scene.render
 
         scene_props = pyclone_utils.get_scene_props(scene)
-        obj = context.object
-        obj_props = pyclone_utils.get_scene_props(obj)
 
         self.draw_camera_settings(context,layout)
 
-        if obj_props.is_view_object:
-            # layout.prop(obj,'name')
+        obj = context.object
+        if obj:
+            obj_props = pyclone_utils.get_object_props(obj)
+            if obj_props.is_view_object:
+                # layout.prop(obj,'name')
 
-            if obj.type == 'CAMERA':
-                pass
+                if obj.type == 'CAMERA':
+                    pass
 
-            if obj.type == 'EMPTY':
-                pass
+                if obj.type == 'EMPTY':
+                    pass
 
 
 classes = (

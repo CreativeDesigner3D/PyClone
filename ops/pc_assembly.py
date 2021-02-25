@@ -19,6 +19,17 @@ import os, math
 from .. import pyclone_utils
 from ..pc_lib import pc_types, pc_utils, pc_unit
 
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import legal,letter,inch,cm
+from reportlab.platypus import Image
+from reportlab.platypus import Paragraph,Table,TableStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Frame, Spacer, PageTemplate, PageBreak
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A3, A4, landscape, portrait
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY
+from reportlab.platypus.flowables import HRFlowable
+
 class pc_assembly_OT_create_new_assembly(Operator):
     bl_idname = "pc_assembly.create_new_assembly"
     bl_label = "Create New Assembly"
@@ -364,6 +375,14 @@ class pc_assembly_OT_create_assembly_layout(Operator):
     def poll(cls, context):
         return True
 
+    def get_unique_collection_name(self,name):
+        if name not in bpy.data.collections:
+            return name    
+        counter = 1
+        while name + " " + str(counter) in bpy.data.collections:
+            counter += 1    
+        return name + " " + str(counter)
+
     def execute(self, context):
         if self.obj_bp_name in bpy.data.objects:
             model_scene = context.scene
@@ -375,9 +394,10 @@ class pc_assembly_OT_create_assembly_layout(Operator):
             a_height = math.fabs(assembly.obj_z.location.z)
             view_gap = .5
 
-            collection = assembly.create_assembly_collection(self.view_name)
-
+            collection_name = self.get_unique_collection_name(self.view_name)
+            collection = assembly.create_assembly_collection(collection_name)
             bpy.ops.scene.new(type='EMPTY')
+            context.scene.name = collection_name
             assembly_layout = pc_types.Assembly_Layout(context.scene)
             assembly_layout.setup_assembly_layout()
             if self.include_front_view:
@@ -458,6 +478,7 @@ class pc_assembly_OT_create_assembly_dimension(bpy.types.Operator):
             dim.obj_bp.parent = sel_obj
             dim.obj_bp.location = assembly.obj_bp.location
             dim.obj_x.location.x = assembly.obj_x.location.x
+            dim.flip_y()
             dim.update_dim_text()
 
         if self.add_y_dimension:
@@ -506,7 +527,6 @@ class pc_assembly_OT_add_title_block(bpy.types.Operator):
 
         title_block = pc_types.Title_Block()
         title_block.create_title_block(assembly_layout)
-        title_block.obj_bp.pyclone.is_view_object = True
         title_block.obj_bp.rotation_euler.x = math.radians(90)
         return {'FINISHED'}
 
@@ -603,6 +623,67 @@ class pc_assembly_OT_make_assembly_static(Operator):
         layout.prop(self,'update_all_assemblies')
 
 
+class pc_assembly_OT_return_to_model_view(Operator):
+    bl_idname = "pc_assembly.return_to_model_view"
+    bl_label = "Return to Model View"
+    bl_description = "This will return to model space"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    dimension = None
+
+    def execute(self, context):
+        for index, scene in enumerate(bpy.data.scenes):
+            if not scene.pyclone.is_view_scene:
+                context.window.scene = scene
+                context.window.scene.pyclone.scene_index = index
+
+        return {'FINISHED'}
+
+
+class pc_assembly_OT_create_pdf_of_assembly_views(bpy.types.Operator):
+    bl_idname = "pc_assembly.create_pdf_of_assembly_views"
+    bl_label = "Create PDF of assembly views"
+    bl_description = "Create PDF of assembly views"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def render_scene(self,context,scene):
+        context.window.scene = scene
+        filepath = os.path.join(bpy.app.tempdir,scene.name + " View")
+        render = bpy.context.scene.render
+        render.use_file_extension = True
+        render.filepath = filepath
+        bpy.ops.render.render(write_still=True)
+        return filepath
+
+    def create_pdf(self,context,images):
+        width, height = landscape(letter)
+        filepath = os.path.join(bpy.app.tempdir,"2D Views.PDF")
+        filename = "2D Views.PDF"
+        c = canvas.Canvas(filepath, pagesize=landscape(letter))
+
+        for image in images:
+            c.drawImage(image,0,0,width=width, height=height, mask='auto',preserveAspectRatio=True)  
+            c.showPage()
+        c.save()
+
+        os.system('start "Title" /D "' + bpy.app.tempdir + '" "' + filename + '"')
+
+    def execute(self, context):
+        images = []
+        for scene in bpy.data.scenes:
+            if scene.pyclone.is_view_scene:
+                file_path = self.render_scene(context,scene)
+                images.append(file_path + ".png")
+
+        self.create_pdf(context,images)
+        return {'FINISHED'}
+
 classes = (
     pc_assembly_OT_create_new_assembly,
     pc_assembly_OT_delete_assembly,
@@ -617,7 +698,9 @@ classes = (
     pc_assembly_OT_create_assembly_dimension,
     pc_assembly_OT_show_dimension_properties,
     pc_assembly_OT_add_title_block,
-    pc_assembly_OT_make_assembly_static
+    pc_assembly_OT_make_assembly_static,
+    pc_assembly_OT_return_to_model_view,
+    pc_assembly_OT_create_pdf_of_assembly_views
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)
