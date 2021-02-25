@@ -21,6 +21,10 @@ def get_drivers(obj):
         for driver in obj.data.animation_data.drivers:
             drivers.append(driver)
 
+    if obj.data and obj.data.shape_keys and obj.data.shape_keys.animation_data:
+        for driver in obj.data.shape_keys.animation_data.drivers:
+            drivers.append(driver)
+
     return drivers            
 
 def draw_driver(layout,obj,driver):
@@ -39,7 +43,10 @@ def draw_driver(layout,obj,driver):
     try:
         value = eval('bpy.data.objects["' + obj.name + '"].' + driver.data_path)
     except:
-        value = eval('bpy.data.objects["' + obj.name + '"].data.' + driver.data_path)
+        if "key_blocks" in driver.data_path:
+            value = eval('bpy.data.objects["' + obj.name + '"].data.shape_keys.' + driver.data_path)
+        else:
+            value = eval('bpy.data.objects["' + obj.name + '"].data.' + driver.data_path)
     if type(value).__name__ == 'str':
         row.label(text=driver_name + " = " + str(value),icon='AUTO')
     elif type(value).__name__ == 'float':

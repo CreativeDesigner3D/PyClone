@@ -15,7 +15,9 @@ from bpy.props import (StringProperty,
                        EnumProperty,
                        CollectionProperty)
 
+from .. import pyclone_utils
 from ..pc_lib import pc_unit, pc_utils, pc_types
+
 
 class PC_prompt_collection(PropertyGroup):
     add: BoolProperty(name="Add")
@@ -67,7 +69,7 @@ class DRIVER_OT_get_vars_from_object(Operator):
                 prompt_copy.prompt_type = prompt.prompt_type
 
     def execute(self, context):
-        drivers = pc_utils.get_drivers(self.obj)
+        drivers = pyclone_utils.get_drivers(self.obj)
         for DR in drivers:
             if self.data_path in DR.data_path and DR.array_index == self.array_index:
                 # DR.driver.show_debug_info = False
@@ -246,7 +248,7 @@ class DRIVER_OT_remove_variable(Operator):
 
     def execute(self, context):
         obj = bpy.data.objects[self.object_name]
-        drivers = pc_utils.get_drivers(obj)
+        drivers = pyclone_utils.get_drivers(obj)
         for driver in drivers:
             if driver.data_path == self.data_path:
                 if driver.array_index == self.array_index:

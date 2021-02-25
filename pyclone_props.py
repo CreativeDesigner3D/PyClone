@@ -176,7 +176,7 @@ class Prompt(PropertyGroup):
         if self.prompt_type == 'QUANTITY':
             data_path = prompt_path + '.quantity_value'
         if self.prompt_type == 'PERCENTAGE':
-            data_path = prompt_path + '.precentage_value'
+            data_path = prompt_path + '.percentage_value'
         if self.prompt_type == 'CHECKBOX':
             data_path = prompt_path + '.checkbox_value'
         if self.prompt_type == 'COMBOBOX':
