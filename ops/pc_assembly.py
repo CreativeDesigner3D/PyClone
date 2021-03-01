@@ -15,9 +15,17 @@ from bpy.props import (
         PointerProperty,
         FloatProperty,
         )
-import os, math
+import os, math, sys
 from .. import pyclone_utils
 from ..pc_lib import pc_types, pc_utils, pc_unit
+
+try:
+    import reportlab
+except ModuleNotFoundError:
+    print('NOT FOUND')
+    ROOT_PATH = os.path.dirname(__file__)
+    PATH = os.path.join(os.path.dirname(ROOT_PATH),"python_libs")
+    sys.path.append(PATH)
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import legal,letter,inch,cm

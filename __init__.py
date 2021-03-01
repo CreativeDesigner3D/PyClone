@@ -15,9 +15,7 @@ from bpy.app.handlers import persistent
 import os
 import sys
 PATH = os.path.join(os.path.dirname(__file__),"python_libs")
-print('APPENDING PATH',PATH)
 sys.path.append(PATH)
-
 from .ui import pc_filebrowser_ui
 from .ui import pc_lists
 from .ui import pc_view3d_ui_menu
