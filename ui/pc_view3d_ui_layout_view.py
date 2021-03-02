@@ -78,15 +78,15 @@ class VIEW3D_PT_pc_layout_view(Panel):
             box = layout.box()
             box.label(text="Create View",icon='SEQ_PREVIEW')    
             row = box.row()        
-            row.operator('pc_assembly.create_assembly_dimension',text="Top",icon='AXIS_TOP')
-            row.operator('pc_assembly.create_assembly_dimension',text="Front",icon='FACESEL')
-            row.operator('pc_assembly.create_assembly_dimension',text="Side",icon='AXIS_SIDE')
+            row.operator('pc_assembly.create_assembly_view',text="Top",icon='AXIS_TOP').view = 'TOP'
+            row.operator('pc_assembly.create_assembly_view',text="Front",icon='FACESEL').view = 'FRONT'
+            row.operator('pc_assembly.create_assembly_view',text="Side",icon='AXIS_SIDE').view = 'SIDE'
 
             #ADD DIMENSION ADD ANNOTATION
             box = layout.box()
             box.label(text="Dimensions and Annotations",icon='DRIVER_DISTANCE')               
             box.operator('pc_assembly.create_assembly_dimension',text="Add Dimension",icon='TRACKING_FORWARDS_SINGLE')
-            box.operator('pc_assembly.create_assembly_dimension',text="Add Annotation",icon='CON_ROTLIMIT')
+            box.operator('pc_assembly.add_add_annotation',text="Add Annotation",icon='CON_ROTLIMIT')
             box.operator('pc_assembly.add_title_block',text="Add Title Block",icon='MENU_PANEL')
 
         else:

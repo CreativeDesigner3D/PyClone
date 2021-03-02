@@ -440,10 +440,35 @@ class Assembly_Layout():
 
 class Title_Block(Assembly):
 
+    obj_drawing_title = None
+    obj_description = None
+    obj_scale = None
+    obj_drawn_by = None
+    obj_drawing_number = None
+    obj_revision_number = None
+    obj_original_date = None
+    obj_revision_date = None
+
     def __init__(self,obj_bp=None):
         super().__init__(obj_bp=obj_bp)  
         if self.obj_bp:
             for child in obj_bp.children:
+                if "IS_DRAWING_TITLE" in child:
+                    self.obj_drawing_title = child
+                if "IS_DESCRIPTION" in child:
+                    self.obj_description = child         
+                if "IS_SCALE" in child:
+                    self.obj_scale = child         
+                if "IS_DRAWN_BY" in child:
+                    self.obj_drawn_by = child         
+                if "IS_DRAWING_NUMBER" in child:
+                    self.obj_drawing_number = child        
+                if "IS_REVISION_NUMBER" in child:
+                    self.obj_revision_number = child          
+                if "IS_ORIGINAL_DATE" in child:
+                    self.obj_original_date = child             
+                if "IS_REVISION_DATE" in child:
+                    self.obj_revision_date = child                  
                 if child.type == 'FONT':
                     self.obj_text = child   
 
@@ -465,9 +490,121 @@ class Title_Block(Assembly):
             if "obj_z" in obj:
                 self.obj_z = obj
             if "obj_prompts" in obj:
-                self.obj_prompts = obj                
+                self.obj_prompts = obj       
+            if "IS_DRAWING_TITLE" in obj:
+                self.obj_drawing_title = obj
+            if "IS_DESCRIPTION" in obj:
+                self.obj_description = obj         
+            if "IS_SCALE" in obj:
+                self.obj_scale = obj         
+            if "IS_DRAWN_BY" in obj:
+                self.obj_drawn_by = obj         
+            if "IS_DRAWING_NUMBER" in obj:
+                self.obj_drawing_number = obj        
+            if "IS_REVISION_NUMBER" in obj:
+                self.obj_revision_number = obj          
+            if "IS_ORIGINAL_DATE" in obj:
+                self.obj_original_date = obj             
+            if "IS_REVISION_DATE" in obj:
+                self.obj_revision_date = obj  
+            obj["PROMPT_ID"] = 'pc_assembly.show_title_block_properties'                           
             collection.objects.link(obj)
 
+    def draw_ui(self,context,layout):
+        arrow_height = self.get_prompt("Arrow Height")
+        arrow_length = self.get_prompt("Arrow Length")
+        extend_first_line_amount = self.get_prompt("Extend First Line Amount")
+        extend_second_line_amount = self.get_prompt("Extend Second Line Amount")
+        line_thickness = self.get_prompt("Line Thickness")
+
+        row = layout.row()
+        row.label(text="Drawing Title:")
+        row.prop(self.obj_drawing_title.data,'body',text="")
+
+        row = layout.row()
+        row.label(text="Description:")
+        row.prop(self.obj_description.data,'body',text="")
+
+        row = layout.row()
+        row.label(text="Scale:")
+        row.prop(self.obj_scale.data,'body',text="")
+
+        row = layout.row()
+        row.label(text="Drawn By:")
+        row.prop(self.obj_drawn_by.data,'body',text="")
+
+        row = layout.row()
+        row.label(text="Drawing Number:")
+        row.prop(self.obj_drawing_number.data,'body',text="")
+
+        row = layout.row()
+        row.label(text="Revision Number:")
+        row.prop(self.obj_revision_number.data,'body',text="")
+
+        row = layout.row()
+        row.label(text="Drawing Title:")
+        row.prop(self.obj_drawing_title.data,'body',text="")
+
+        row = layout.row()
+        row.label(text="Original Date:")
+        row.prop(self.obj_original_date.data,'body',text="")                                                
+
+        row = layout.row()
+        row.label(text="Revision Date:")
+        row.prop(self.obj_revision_date.data,'body',text="")  
+
+class Annotation(Assembly):
+
+    obj_text = None
+
+    def __init__(self,obj_bp=None):
+        super().__init__(obj_bp=obj_bp)  
+        if self.obj_bp:
+            for child in obj_bp.children:
+                if child.type == 'FONT':
+                    self.obj_text = child   
+
+    def create_annotation(self,layout_view):
+        collection = layout_view.dimension_collection
+
+        PATH = os.path.join(os.path.dirname(__file__),'assets',"Annotation_Arrow.blend")
+
+        with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
+            data_to.objects = data_from.objects
+
+        for obj in data_to.objects:
+            if "obj_bp" in obj:
+                self.obj_bp = obj            
+            if "obj_x" in obj:
+                self.obj_x = obj
+            if "obj_y" in obj:
+                self.obj_y = obj           
+            if "obj_z" in obj:
+                self.obj_z = obj
+            if "obj_prompts" in obj:
+                self.obj_prompts = obj         
+            if obj.type == 'FONT':
+                self.obj_text = obj     
+            obj["PROMPT_ID"] = 'pc_assembly.show_annotation_properties'                       
+            collection.objects.link(obj)
+
+    def draw_ui(self,context,layout):
+        arrow_height = self.get_prompt("Arrow Height")
+        arrow_length = self.get_prompt("Arrow Length")
+        line_thickness = self.get_prompt("Line Thickness")
+
+        row = layout.row()
+        row.label(text="Annotation Text:")
+        row.prop(self.obj_text.data,'body',text="")
+
+        row = layout.row() 
+        row.label(text="Arrow Size:")
+        row.prop(arrow_height,'distance_value',text="Height")     
+        row.prop(arrow_length,'distance_value',text="Length")  
+
+        row = layout.row()
+        row.label(text="Line Thickness:")
+        row.prop(line_thickness,'distance_value',text="")   
 
 class Dimension(Assembly):
 
@@ -521,17 +658,19 @@ class Dimension(Assembly):
         text = str(round(pc_unit.meter_to_inch(self.obj_x.location.x),2))
         self.obj_text.data.body = text + '"'
         bpy.context.view_layer.update()
-        # self.obj_text.location = self.obj_text.location #FORCE UPDATE
-        # self.obj_bp.location = self.obj_bp.location #FORCE UPDATE
-        # print('TEXT DIM X',self.obj_text.dimensions.x + .05)
+
+        div_factor = 1
+        if self.obj_bp.parent:
+            div_factor = self.obj_bp.parent.scale.x
+
         text_width = self.get_prompt("Text Width")
-        text_width.set_value(self.obj_text.dimensions.x + .05)
+        text_width.set_value((self.obj_text.dimensions.x/div_factor) + .05)
         for child in self.obj_bp.children:
             if child.type == 'EMPTY':
                 child.hide_viewport = True
-        if self.obj_y.location.y < 0:
-            hll = self.get_prompt('Horizontal Line Location')
-            hll.set_value(hll.get_value()*-1)
+        # if self.obj_y.location.y < 0:
+        #     hll = self.get_prompt('Horizontal Line Location')
+        #     hll.set_value(hll.get_value()*-1)
 
     def draw_ui(self,context,layout):
         arrow_height = self.get_prompt("Arrow Height")

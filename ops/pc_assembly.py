@@ -492,13 +492,15 @@ class pc_assembly_OT_create_assembly_dimension(bpy.types.Operator):
         if self.add_y_dimension:
             dim = pc_types.Dimension()
             dim.create_dimension(assembly_layout)
-            dim.obj_bp.rotation_euler.x = math.radians(90)
+            dim.obj_bp.rotation_euler.x = math.radians(-90)
             dim.obj_bp.rotation_euler.y = math.radians(0)
             dim.obj_bp.rotation_euler.z = math.radians(-90)
-            dim.obj_y.location.y = -.2
+            dim.obj_y.location.y = .2
             dim.obj_bp.parent = sel_obj
             dim.obj_bp.location = assembly.obj_bp.location
             dim.obj_x.location.x = math.fabs(assembly.obj_y.location.y)
+            dim.flip_y()
+            dim.flip_x()
             dim.update_dim_text()
 
         if self.add_z_dimension:
@@ -539,6 +541,32 @@ class pc_assembly_OT_add_title_block(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class pc_assembly_OT_add_annotation(bpy.types.Operator):
+    bl_idname = "pc_assembly.add_add_annotation"
+    bl_label = "Add Annotation"
+    bl_description = "This adds an annotation to the current layout"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        assembly_layout = pc_types.Assembly_Layout(context.scene)
+
+        annotation = pc_types.Annotation()
+        annotation.create_annotation(assembly_layout)
+        annotation.obj_bp.rotation_euler.x = math.radians(90)
+        if context.object:
+            annotation.obj_bp.parent = context.object
+            for child in annotation.obj_bp.children:
+                if child.type == 'EMPTY':
+                    child.hide_viewport = True
+                    child.hide_viewport = True
+            annotation.obj_x.hide_viewport = False
+        return {'FINISHED'}
+
+
 class pc_assembly_OT_show_dimension_properties(Operator):
     bl_idname = "pc_assembly.show_dimension_properties"
     bl_label = "Show Dimension Properties"
@@ -567,6 +595,66 @@ class pc_assembly_OT_show_dimension_properties(Operator):
     def draw(self, context):
         layout = self.layout
         self.dimension.draw_ui(context,layout)
+
+
+class pc_assembly_OT_show_annotation_properties(Operator):
+    bl_idname = "pc_assembly.show_annotation_properties"
+    bl_label = "Show Annotation Properties"
+    bl_description = "This will show the annotation properties"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    annotation = None
+
+    def execute(self, context):
+        # self.dimension.update_dim_text()
+        return {'FINISHED'}
+
+    def check(self, context):
+        # self.dimension.update_dim_text()
+        return True
+
+    def invoke(self,context,event):
+        dim_bp = pc_utils.get_assembly_bp(context.object)
+        self.annotation = pc_types.Annotation(dim_bp)  
+        # self.annotation.update_dim_text()
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        self.annotation.draw_ui(context,layout)
+
+
+class pc_assembly_OT_show_title_block_properties(Operator):
+    bl_idname = "pc_assembly.show_title_block_properties"
+    bl_label = "Show Title Block Properties"
+    bl_description = "This will show the title block properties properties"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    title_block = None
+
+    def execute(self, context):
+        # self.dimension.update_dim_text()
+        return {'FINISHED'}
+
+    def check(self, context):
+        # self.dimension.update_dim_text()
+        return True
+
+    def invoke(self,context,event):
+        dim_bp = pc_utils.get_assembly_bp(context.object)
+        self.title_block = pc_types.Title_Block(dim_bp)  
+        # self.annotation.update_dim_text()
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        self.title_block.draw_ui(context,layout)
 
 
 class pc_assembly_OT_make_assembly_static(Operator):
@@ -650,6 +738,56 @@ class pc_assembly_OT_return_to_model_view(Operator):
         return {'FINISHED'}
 
 
+class pc_assembly_OT_create_assembly_view(Operator):
+    bl_idname = "pc_assembly.create_assembly_view"
+    bl_label = "Create Assembly View"
+    bl_description = "This will create an assembly view"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    view: bpy.props.EnumProperty(name="View",
+                                 items=[('TOP',"Top","Create Top View"),
+                                        ('FRONT',"Front","Create Front View"),
+                                        ('SIDE',"Side","Create Side View")],
+                                 default='TOP')
+
+    dimension = None
+
+    @classmethod
+    def poll(cls, context):
+        if context.object:
+            if context.object.pyclone.is_view_object:
+                return True
+        return False
+
+    def execute(self, context):
+        assembly_layout = pc_types.Assembly_Layout(context.scene)
+        view_obj = context.object
+
+        assembly_bp = context.object.instance_collection.pyclone.assembly_bp
+        assembly = pc_types.Assembly(assembly_bp)
+        
+        obj = assembly_layout.add_assembly_view(context.object.instance_collection)
+        obj.location = view_obj.location
+        obj.scale = view_obj.scale
+
+        if self.view == 'TOP':
+            offset_dim = (assembly.obj_z.location.z + math.fabs(assembly.obj_y.location.y) + pc_unit.inch(10)) * view_obj.scale.z
+            obj.location.z += offset_dim
+            obj.rotation_euler.x = math.radians(90)
+            
+        if self.view == 'FRONT':
+            pass
+
+        if self.view == 'SIDE':
+            offset_dim = (assembly.obj_x.location.x + math.fabs(assembly.obj_y.location.y) + pc_unit.inch(10)) * view_obj.scale.x
+            obj.location.x += offset_dim
+            obj.rotation_euler.z = math.radians(-90)
+
+        return {'FINISHED'}
+
+
 class pc_assembly_OT_create_pdf_of_assembly_views(bpy.types.Operator):
     bl_idname = "pc_assembly.create_pdf_of_assembly_views"
     bl_label = "Create PDF of assembly views"
@@ -704,10 +842,14 @@ classes = (
     pc_assembly_OT_select_parent_assembly,
     pc_assembly_OT_create_assembly_layout,
     pc_assembly_OT_create_assembly_dimension,
+    pc_assembly_OT_show_annotation_properties,
     pc_assembly_OT_show_dimension_properties,
+    pc_assembly_OT_show_title_block_properties,
     pc_assembly_OT_add_title_block,
+    pc_assembly_OT_add_annotation,
     pc_assembly_OT_make_assembly_static,
     pc_assembly_OT_return_to_model_view,
+    pc_assembly_OT_create_assembly_view,
     pc_assembly_OT_create_pdf_of_assembly_views
 )
 
