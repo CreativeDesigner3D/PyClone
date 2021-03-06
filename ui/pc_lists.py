@@ -40,6 +40,7 @@ class PC_UL_scenes(UIList):
             layout.label(text="Model Space",icon='SNAP_VOLUME')
         else:
             layout.label(text=item.name,icon='SNAP_FACE')
+            layout.operator('pc_assembly.delete_assembly_layout',text="",icon='X',emboss=False).view_name = item.name
 
 classes = (
     PC_UL_combobox,
