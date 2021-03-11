@@ -330,10 +330,12 @@ class Assembly_Layout():
     HIDDEN_LINE_GAP_PX = 10
 
     scene = None
+    camera = None
     dimension_collection = None
 
     def __init__(self,scene=None):
         self.scene = scene
+        self.camera = scene.camera
         for collection in self.scene.collection.children:
             if collection.pyclone.is_dimension_collection:
                 self.dimension_collection = collection
@@ -421,19 +423,19 @@ class Assembly_Layout():
     def add_layout_camera(self):
         cam = bpy.data.cameras.new('Camera ' + self.scene.name)
         cam.type = 'ORTHO'
-        cam_obj = bpy.data.objects.new('Camera ' + self.scene.name,cam)
-        cam_obj.location.x = 0.13951
-        cam_obj.location.y = -2.0573
-        cam_obj.location.z = 0.10793
-        cam_obj.rotation_euler.x = math.radians(90)
-        cam_obj.rotation_euler.y = 0
-        cam_obj.rotation_euler.z = 0
-        self.scene.view_layers[0].active_layer_collection.collection.objects.link(cam_obj)  
+        self.camera = bpy.data.objects.new('Camera ' + self.scene.name,cam)
+        self.camera.location.x = 0.13951
+        self.camera.location.y = -2.0573
+        self.camera.location.z = 0.10793
+        self.camera.rotation_euler.x = math.radians(90)
+        self.camera.rotation_euler.y = 0
+        self.camera.rotation_euler.z = 0
+        self.scene.view_layers[0].active_layer_collection.collection.objects.link(self.camera)  
         self.scene.render.resolution_x = 1920
         self.scene.render.resolution_y = 1486
-        self.scene.camera = cam_obj
+        self.scene.camera = self.camera
 
-        bpy.ops.view3d.camera_to_view_selected()
+        # bpy.ops.view3d.camera_to_view_selected()
         bpy.ops.view3d.view_camera()
         bpy.ops.view3d.view_center_camera()        
 
@@ -510,12 +512,12 @@ class Title_Block(Assembly):
             obj["PROMPT_ID"] = 'pc_assembly.show_title_block_properties'                           
             collection.objects.link(obj)
 
+        self.obj_bp.parent = layout_view.camera
+        self.obj_bp.location.x = -0.13959
+        self.obj_bp.location.y = -0.108
+        self.obj_bp.location.z = -1.001
+
     def draw_ui(self,context,layout):
-        arrow_height = self.get_prompt("Arrow Height")
-        arrow_length = self.get_prompt("Arrow Length")
-        extend_first_line_amount = self.get_prompt("Extend First Line Amount")
-        extend_second_line_amount = self.get_prompt("Extend Second Line Amount")
-        line_thickness = self.get_prompt("Line Thickness")
 
         row = layout.row()
         row.label(text="Drawing Title:")
@@ -552,6 +554,7 @@ class Title_Block(Assembly):
         row = layout.row()
         row.label(text="Revision Date:")
         row.prop(self.obj_revision_date.data,'body',text="")  
+
 
 class Annotation(Assembly):
 
@@ -605,6 +608,7 @@ class Annotation(Assembly):
         row = layout.row()
         row.label(text="Line Thickness:")
         row.prop(line_thickness,'distance_value',text="")   
+
 
 class Dimension(Assembly):
 

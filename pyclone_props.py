@@ -518,9 +518,6 @@ def update_page_scale(self,context):
         scene.render.resolution_y = 1486
         cam_obj = context.scene.camera
         cam_obj.data.ortho_scale = .279
-        cam_obj.location.x = 0.13951
-        cam_obj.location.y = -2.0573
-        cam_obj.location.z = 0.10793
 
     #TODO: SETUP ALL DIFFERENT OBJECT SCALE
     if self.page_scale_unit_type == 'IMPERIAL':

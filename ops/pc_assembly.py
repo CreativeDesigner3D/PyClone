@@ -252,6 +252,7 @@ class pc_assembly_OT_add_object(Operator):
         layout.prop(self,'object_type',expand=True)
         layout.prop(self,'object_name')
 
+
 class pc_assembly_OT_connect_mesh_to_hooks_in_assembly(Operator):
     bl_idname = "pc_assembly.connect_meshes_to_hooks_in_assembly"
     bl_label = "Connect Mesh to Hooks In Assembly"
@@ -423,7 +424,7 @@ class pc_assembly_OT_create_assembly_layout(Operator):
                 obj_top.rotation_euler = (math.radians(90),0,0)    
             assembly_layout.add_layout_camera()
             assembly_layout.scene.world = model_scene.world
-
+            assembly_layout.camera.parent = assembly.obj_bp                 
         return {'FINISHED'}
 
     def invoke(self,context,event):
@@ -562,10 +563,8 @@ class pc_assembly_OT_add_title_block(bpy.types.Operator):
 
     def execute(self, context):
         assembly_layout = pc_types.Assembly_Layout(context.scene)
-
         title_block = pc_types.Title_Block()
         title_block.create_title_block(assembly_layout)
-        title_block.obj_bp.rotation_euler.x = math.radians(90)
         return {'FINISHED'}
 
 
