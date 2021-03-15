@@ -518,26 +518,53 @@ def update_page_scale(self,context):
         scene.render.resolution_y = 1486
         cam_obj = context.scene.camera
         cam_obj.data.ortho_scale = .279
+    else:
+        scene.render.resolution_x = 1920
+        scene.render.resolution_y = 1169
+        cam_obj = context.scene.camera
+        cam_obj.data.ortho_scale = .355
 
-    #TODO: SETUP ALL DIFFERENT OBJECT SCALE
+    if self.fit_to_paper:
+        return 
+
     if self.page_scale_unit_type == 'IMPERIAL':
         if self.imperial_page_scale == '1:1':
             scale = (1,1,1)
+        elif self.imperial_page_scale == '3/4in_1ft':
+            scale = (0.0625,0.0625,0.0625)             
         elif self.imperial_page_scale == '1/2in_1ft':
             scale = (0.04166,0.04166,0.04166)    
         elif self.imperial_page_scale == '1/4in_1ft':
-            scale = (0.02083,0.02083,0.02083)    
+            scale = (0.020833,0.020833,0.020833)    
         elif self.imperial_page_scale == '1in_1ft':
-            scale = (.08332,.08332,.08332)    
+            scale = (.083333,.083333,.083333)    
         else:
             scale = (.08332,.08332,.08332)
     else:
         if self.metric_page_scale == '1:1':
             scale = (1,1,1)
-        elif self.metric_page_scale == '1:30':
-            scale = (.03,.03,.03)
-        elif self.metric_page_scale == '1:50':
+        elif self.metric_page_scale == '1:10':
+            scale = (.1,.1,.1)
+        elif self.metric_page_scale == '1:20':
             scale = (.05,.05,.05)
+        elif self.metric_page_scale == '1:30':
+            scale = (.03333,.03333,.03333)
+        elif self.metric_page_scale == '1:40':
+            scale = (.025,.025,.025)
+        elif self.metric_page_scale == '1:45':
+            scale = (.02222,.02222,.02222)
+        elif self.metric_page_scale == '1:50':
+            scale = (.02,.02,.02)
+        elif self.metric_page_scale == '1:60':
+            scale = (.016666,.016666,.016666)                  
+        elif self.metric_page_scale == '1:70':
+            scale = (.014333,.014333,.014333)              
+        elif self.metric_page_scale == '1:80':
+            scale = (.0125,.0125,.0125)              
+        elif self.metric_page_scale == '1:90':
+            scale = (.011111,.011111,.011111)               
+        elif self.metric_page_scale == '1:100':
+            scale = (.01,.01,.01)            
         else:
             scale = (.01,.01,.01)
 
@@ -552,8 +579,6 @@ class PC_Scene_Props(PropertyGroup):
                                        ('OBJECTS',"Objects","Show the Objects"),
                                        ('LOGIC',"Logic","Show the Assembly Logic")],
                                 default='MAIN')
-
-    
 
     driver_tabs: EnumProperty(name="Driver Tabs",
                               items=[('LOC_X',"Location X","Show the X Location Driver"),
@@ -578,54 +603,61 @@ class PC_Scene_Props(PropertyGroup):
 
     page_size: EnumProperty(name="Page Size",
                             items=[('LETTER',"Letter 216 x 279 mm (8.5 X 11 in)","Letter 216 x 279 mm (8.5 X 11 in)"),
-                                   ('LEGAL',"Legal 216 x 356 mm (8.5 X 14 in)","Legal 216 x 356 mm (8.5 X 14 in)"),
-                                   ('ANSI_A',"ANSI A 216 x 279 mm (8.5 X 11 in)","ANSI A 216 x 279 mm (8.5 X 11 in)"),
-                                   ('ANSI_B',"ANSI B 279 x 432 mm (11 X 17 in)","ANSI B 279 x 432 mm (11 X 17 in)"),
-                                   ('ANSI_C',"ANSI C 432 x 559 mm (17 X 22 in)","ANSI C 432 x 559 mm (17 X 22 in)"),
-                                   ('ANSI_D',"ANSI D 559 x 864 mm (22 X 34 in)","ANSI D 559 x 864 mm (22 X 34 in)"),
-                                   ('ANSI_E',"ANSI E 216 x 279 mm (34 X 44 in)","ANSI E 216 x 279 mm (34 X 44 in)"),
-                                   ('ARCH_A',"ARCH A 229 × 305 mm (9 X 12 in)","ARCH A 229 × 305 mm (9 X 12 in)"),
-                                   ('ARCH_B',"ARCH B 305 × 457 mm (12 X 18 in)","ARCH B 305 × 457 mm (12 X 18 in)"),
-                                   ('ARCH_C',"ARCH C 457 × 610 mm (18 X 24 in)","ARCH C 457 × 610 mm (18 X 24 in)"),
-                                   ('ARCH_D',"ARCH D 610 × 914 mm (24 X 36 in)","ARCH D 610 × 914 mm (24 X 36 in)"),
-                                   ('ARCH_E',"ARCH E 914 × 1219 mm (36 X 48 in)","ARCH E 914 × 1219 mm (36 X 48 in)")],
-                              default='LETTER')
+                                   ('LEGAL',"Legal 216 x 356 mm (8.5 X 14 in)","Legal 216 x 356 mm (8.5 X 14 in)")],
+                              default='LETTER',
+                              update=update_page_scale)
+
+    #TODO: SETUP PAGE SIZES
+    # page_size: EnumProperty(name="Page Size",
+    #                         items=[('LETTER',"Letter 216 x 279 mm (8.5 X 11 in)","Letter 216 x 279 mm (8.5 X 11 in)"),
+    #                                ('LEGAL',"Legal 216 x 356 mm (8.5 X 14 in)","Legal 216 x 356 mm (8.5 X 14 in)"),
+    #                                ('ANSI_A',"ANSI A 216 x 279 mm (8.5 X 11 in)","ANSI A 216 x 279 mm (8.5 X 11 in)"),
+    #                                ('ANSI_B',"ANSI B 279 x 432 mm (11 X 17 in)","ANSI B 279 x 432 mm (11 X 17 in)"),
+    #                                ('ANSI_C',"ANSI C 432 x 559 mm (17 X 22 in)","ANSI C 432 x 559 mm (17 X 22 in)"),
+    #                                ('ANSI_D',"ANSI D 559 x 864 mm (22 X 34 in)","ANSI D 559 x 864 mm (22 X 34 in)"),
+    #                                ('ANSI_E',"ANSI E 216 x 279 mm (34 X 44 in)","ANSI E 216 x 279 mm (34 X 44 in)"),
+    #                                ('ARCH_A',"ARCH A 229 × 305 mm (9 X 12 in)","ARCH A 229 × 305 mm (9 X 12 in)"),
+    #                                ('ARCH_B',"ARCH B 305 × 457 mm (12 X 18 in)","ARCH B 305 × 457 mm (12 X 18 in)"),
+    #                                ('ARCH_C',"ARCH C 457 × 610 mm (18 X 24 in)","ARCH C 457 × 610 mm (18 X 24 in)"),
+    #                                ('ARCH_D',"ARCH D 610 × 914 mm (24 X 36 in)","ARCH D 610 × 914 mm (24 X 36 in)"),
+    #                                ('ARCH_E',"ARCH E 914 × 1219 mm (36 X 48 in)","ARCH E 914 × 1219 mm (36 X 48 in)")],
+    #                           default='LETTER')
 
     fit_to_paper: BoolProperty(name="Fit to Paper",default=True,update=update_page_scale)
 
     page_scale_unit_type: EnumProperty(name="Page Scale Unit Type",
                             items=[('IMPERIAL',"Imperial","Imperial"),
                                    ('METRIC',"Metric","Metric")],
-                            default='IMPERIAL')
+                            default='IMPERIAL',
+                            update=update_page_scale)
 
     metric_page_scale: EnumProperty(name="Metric Page Scale",
                             items=[('1:1',"1:1","1:1"),
-                                   ('1:30',"1:30","1:1"),
-                                   ('1:50',"1:50","1:1"),
-                                   ('1:100',"1:100","1:1")],
+                                   ('1:10',"1:10","1:10"),
+                                   ('1:20',"1:20","1:20"),
+                                   ('1:30',"1:30","1:30"),
+                                   ('1:40',"1:40","1:40"),
+                                   ('1:45',"1:45","1:45"),
+                                   ('1:50',"1:50","1:50"),
+                                   ('1:60',"1:60","1:60"),
+                                   ('1:70',"1:70","1:70"),
+                                   ('1:80',"1:80","1:80"),
+                                   ('1:90',"1:90","1:90"),
+                                   ('1:100',"1:100","1:100")],
                             default='1:1',
                             update=update_page_scale)
 
     imperial_page_scale: EnumProperty(name="Imperial Page Scale",
                             items=[('1:1',"1:1","1:1"),
                                    ('1/4in_1ft',"1/4 in = 1 ft","1:1"),
-                                   ('3/8in_1ft',"3/8 in = 1 ft","1:1"),
                                    ('1/2in_1ft',"1/2 in = 1 ft","1:1"),
                                    ('3/4in_1ft',"3/4 in = 1 ft","1:1"),
-                                   ('1in_1ft',"1 in = 1 ft","1 inch = 1 foot"),
-                                   ('1-1/2in_1ft',"3/4 in = 1 ft","1:1")],
+                                   ('1in_1ft',"1 in = 1 ft","1 inch = 1 foot")],
                             default='1:1',
                             update=update_page_scale)
 
     page_style: EnumProperty(name="Page Style",
-                             items=[('BLACK_AND_WHITE',"Black and White","Black and White"),
-                                    ('FULL_COLOR',"Full Color","Full Color"),
-                                    ('MONOCHROME',"Monochrome","Monochrome"),
-                                    ('SCREENING_100%',"Screening 100%","Screening 100%"),
-                                    ('SCREENING_25%',"Screening 25%","Screening 25%"),
-                                    ('SCREENING_50%',"Screening 50%","Screening 50%"),
-                                    ('SCREENING_75%',"Screening 75%","Screening 75%"),
-                                    ('New...',"New..","New...")],
+                             items=[('FULL_COLOR',"Full Color","Full Color")],
                              default='FULL_COLOR')
 
     @classmethod
