@@ -403,6 +403,10 @@ class pc_assembly_OT_create_assembly_layout(Operator):
             a_height = math.fabs(assembly.obj_z.location.z)
             view_gap = .5
 
+            obj_front = None
+            obj_side = None
+            obj_top = None
+
             collection_name = self.get_unique_collection_name(self.view_name)
             collection = assembly.create_assembly_collection(collection_name)
             bpy.ops.scene.new(type='EMPTY')
@@ -415,16 +419,35 @@ class pc_assembly_OT_create_assembly_layout(Operator):
             if self.include_side_view:
                 obj_side = assembly_layout.add_assembly_view(collection)
                 obj_side.name = collection.name + " - Side"
-                obj_side.location = (a_width + a_depth + view_gap,0,0)
+                # obj_side.location = (a_width + a_depth + view_gap,0,0)
                 obj_side.rotation_euler = (0,0,math.radians(-90))
             if self.include_top_view:
                 obj_top = assembly_layout.add_assembly_view(collection)     
                 obj_top.name = collection.name + " - Top"          
-                obj_top.location = (0,0,a_height + a_depth + view_gap)     
+                # obj_top.location = (0,0,a_height + a_depth + view_gap)     
                 obj_top.rotation_euler = (math.radians(90),0,0)    
+
             assembly_layout.add_layout_camera()
             assembly_layout.scene.world = model_scene.world
-            assembly_layout.camera.parent = assembly.obj_bp                 
+            assembly_layout.camera.parent = assembly.obj_bp   
+
+            context.scene.pyclone.fit_to_paper = False
+            context.scene.pyclone.page_scale_unit_type = 'METRIC'
+            context.scene.pyclone.metric_page_scale = '1:30'  
+
+            bpy.ops.object.select_all(action='DESELECT')
+            if obj_front:
+                obj_front.select_set(True)
+            if obj_side:
+                obj_side.select_set(True)
+                obj_side.location = (a_width*obj_side.scale.x + a_depth*obj_side.scale.y + view_gap*obj_side.scale.x,0,0)
+            if obj_top:
+                obj_top.select_set(True)      
+                obj_top.location = (0,0,a_height*obj_side.scale.z + a_depth*obj_side.scale.y + view_gap*obj_side.scale.x)                            
+            context.view_layer.objects.active = obj_front
+            bpy.ops.view3d.camera_to_view_selected()          
+
+            context.scene.pyclone.metric_page_scale = '1:30'                    
         return {'FINISHED'}
 
     def invoke(self,context,event):
@@ -635,17 +658,14 @@ class pc_assembly_OT_show_annotation_properties(Operator):
     annotation = None
 
     def execute(self, context):
-        # self.dimension.update_dim_text()
         return {'FINISHED'}
 
     def check(self, context):
-        # self.dimension.update_dim_text()
         return True
 
     def invoke(self,context,event):
         dim_bp = pc_utils.get_assembly_bp(context.object)
         self.annotation = pc_types.Annotation(dim_bp)  
-        # self.annotation.update_dim_text()
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=400)
 
@@ -665,17 +685,14 @@ class pc_assembly_OT_show_title_block_properties(Operator):
     title_block = None
 
     def execute(self, context):
-        # self.dimension.update_dim_text()
         return {'FINISHED'}
 
     def check(self, context):
-        # self.dimension.update_dim_text()
         return True
 
     def invoke(self,context,event):
         dim_bp = pc_utils.get_assembly_bp(context.object)
         self.title_block = pc_types.Title_Block(dim_bp)  
-        # self.annotation.update_dim_text()
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=400)
 

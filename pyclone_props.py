@@ -623,7 +623,7 @@ class PC_Scene_Props(PropertyGroup):
     #                                ('ARCH_E',"ARCH E 914 × 1219 mm (36 X 48 in)","ARCH E 914 × 1219 mm (36 X 48 in)")],
     #                           default='LETTER')
 
-    fit_to_paper: BoolProperty(name="Fit to Paper",default=True,update=update_page_scale)
+    fit_to_paper: BoolProperty(name="Fit to Paper",default=False,update=update_page_scale)
 
     page_scale_unit_type: EnumProperty(name="Page Scale Unit Type",
                             items=[('IMPERIAL',"Imperial","Imperial"),

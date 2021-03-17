@@ -63,8 +63,8 @@ class VIEW3D_PT_pc_layout_view(Panel):
             row.prop(scene_props,'page_scale_unit_type',text="")
 
             row = box.row()
-            # row.label(text="Fit to Paper")            
-            row.prop(scene_props,'fit_to_paper',text="Fit to Paper")
+            row.label(text="Drawing Scale")            
+            # row.prop(scene_props,'fit_to_paper',text="Fit to Paper")
             if not scene_props.fit_to_paper:
                 if scene_props.page_scale_unit_type == 'METRIC':
                     row.prop(scene_props,'metric_page_scale',text="")
@@ -73,7 +73,7 @@ class VIEW3D_PT_pc_layout_view(Panel):
             row = box.row()
             row.label(text="Print Style")                   
             row.prop(scene_props,'page_style',text="")
-
+            
             #CREATE VIEW OF ASSEMBLY    
             box = layout.box()
             box.label(text="Create View",icon='SEQ_PREVIEW')    
