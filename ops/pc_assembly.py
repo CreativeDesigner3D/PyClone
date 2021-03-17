@@ -852,10 +852,15 @@ class pc_assembly_OT_create_pdf_of_assembly_views(bpy.types.Operator):
         return filepath
 
     def create_pdf(self,context,images):
-        width, height = landscape(letter)
+        
         filepath = os.path.join(bpy.app.tempdir,"2D Views.PDF")
         filename = "2D Views.PDF"
-        c = canvas.Canvas(filepath, pagesize=landscape(letter))
+        if context.scene.pyclone.page_size == 'LETTER':
+            c = canvas.Canvas(filepath, pagesize=landscape(letter))
+            width, height = landscape(letter)
+        else:
+            c = canvas.Canvas(filepath, pagesize=landscape(legal))
+            width, height = landscape(legal)
 
         for image in images:
             c.drawImage(image,0,0,width=width, height=height, mask='auto',preserveAspectRatio=True)  

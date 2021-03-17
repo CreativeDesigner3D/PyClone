@@ -513,11 +513,25 @@ class Title_Block(Assembly):
             collection.objects.link(obj)
 
         self.obj_bp.parent = layout_view.camera
-        self.obj_bp.location.x = -0.13959
-        self.obj_bp.location.y = -0.108
-        self.obj_bp.location.z = -1.001
+        if bpy.context.scene.pyclone.page_size == 'LETTER':
+            self.obj_bp.location.x = -0.13959
+            self.obj_bp.location.y = -0.108
+            self.obj_bp.location.z = -1.001
+            self.obj_x.location.x = pc_unit.inch(11)
+            self.obj_y.location.y = pc_unit.inch(8.5)
+        else:
+            self.obj_bp.location.x = -0.177502
+            self.obj_bp.location.y = -0.108
+            self.obj_bp.location.z = -1.001
+            self.obj_x.location.x = pc_unit.inch(14)
+            self.obj_y.location.y = pc_unit.inch(8.5)
 
     def draw_ui(self,context,layout):
+        arrow_height = self.get_prompt("Arrow Height")
+        arrow_length = self.get_prompt("Arrow Length")
+        extend_first_line_amount = self.get_prompt("Extend First Line Amount")
+        extend_second_line_amount = self.get_prompt("Extend Second Line Amount")
+        line_thickness = self.get_prompt("Line Thickness")
 
         row = layout.row()
         row.label(text="Drawing Title:")
@@ -544,17 +558,12 @@ class Title_Block(Assembly):
         row.prop(self.obj_revision_number.data,'body',text="")
 
         row = layout.row()
-        row.label(text="Drawing Title:")
-        row.prop(self.obj_drawing_title.data,'body',text="")
-
-        row = layout.row()
         row.label(text="Original Date:")
         row.prop(self.obj_original_date.data,'body',text="")                                                
 
         row = layout.row()
         row.label(text="Revision Date:")
         row.prop(self.obj_revision_date.data,'body',text="")  
-
 
 class Annotation(Assembly):
 
@@ -608,7 +617,6 @@ class Annotation(Assembly):
         row = layout.row()
         row.label(text="Line Thickness:")
         row.prop(line_thickness,'distance_value',text="")   
-
 
 class Dimension(Assembly):
 
