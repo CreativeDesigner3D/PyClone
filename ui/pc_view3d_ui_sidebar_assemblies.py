@@ -496,6 +496,9 @@ class pc_assembly_OT_show_properties(bpy.types.Operator):
     def invoke(self,context,event):
         assembly_bp = pc_utils.get_assembly_bp(context.object)
         self.assembly = pc_types.Assembly(assembly_bp)  
+        #Blender crashes if dialog opens with list view.
+        #If Objects > Material tab is displayed then Blender crashes
+        context.scene.pyclone.assembly_tabs = 'MAIN'        
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=400)
 
