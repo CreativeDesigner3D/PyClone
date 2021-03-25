@@ -586,7 +586,8 @@ class Annotation(Assembly):
 
         for obj in data_to.objects:
             if "obj_bp" in obj:
-                self.obj_bp = obj            
+                self.obj_bp = obj     
+                self.obj_bp['IS_ANNOTATION'] = True         
             if "obj_x" in obj:
                 self.obj_x = obj
             if "obj_y" in obj:
@@ -618,6 +619,11 @@ class Annotation(Assembly):
         row.label(text="Line Thickness:")
         row.prop(line_thickness,'distance_value',text="")   
 
+        row = layout.row()
+        row.label(text="Flip Text:")
+        row.prop(self.obj_text.pyclone,'flip_x',text="X")            
+        row.prop(self.obj_text.pyclone,'flip_y',text="Y")     
+        
 class Dimension(Assembly):
 
     obj_text = None
@@ -645,7 +651,8 @@ class Dimension(Assembly):
         collection = layout_view.dimension_collection
         for obj in data_to.objects:
             if "obj_bp" in obj:
-                self.obj_bp = obj            
+                self.obj_bp = obj          
+                self.obj_bp['IS_DIMENSION'] = True  
             if "obj_x" in obj:
                 self.obj_x = obj
             if "obj_y" in obj:

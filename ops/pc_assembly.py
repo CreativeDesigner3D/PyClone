@@ -451,6 +451,9 @@ class pc_assembly_OT_create_assembly_layout(Operator):
         return {'FINISHED'}
 
     def invoke(self,context,event):
+        obj_bp = bpy.data.objects[self.obj_bp_name]
+        assembly = pc_types.Assembly(obj_bp)    
+        self.view_name = assembly.obj_bp.name
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=400)
 
@@ -625,10 +628,33 @@ class pc_assembly_OT_show_dimension_properties(Operator):
 
     obj_bp_name: StringProperty(name="Base Point Name")
 
+    update_all_dimensions: BoolProperty(name="Update All Dimensions")
+
     dimension = None
 
     def execute(self, context):
         self.dimension.update_dim_text()
+        if self.update_all_dimensions:
+            dimensions = []
+            for obj in context.scene.objects:
+                if 'IS_DIMENSION' in obj and obj not in dimensions:
+                    dimensions.append(obj)
+
+            for obj in dimensions:
+                dim = pc_types.Dimension(obj)
+                font_size = dim.get_prompt("Font Size")
+                line_thickness = dim.get_prompt("Line Thickness")
+                arrow_height = dim.get_prompt("Arrow Height")
+                arrow_length = dim.get_prompt("Arrow Length")
+                if font_size:
+                    font_size.set_value(self.dimension.get_prompt("Font Size").get_value())
+                if line_thickness:
+                    line_thickness.set_value(self.dimension.get_prompt("Line Thickness").get_value())
+                if arrow_height:
+                    arrow_height.set_value(self.dimension.get_prompt("Arrow Height").get_value())
+                if arrow_length:
+                    arrow_length.set_value(self.dimension.get_prompt("Arrow Length").get_value())               
+
         return {'FINISHED'}
 
     def check(self, context):
@@ -645,6 +671,7 @@ class pc_assembly_OT_show_dimension_properties(Operator):
     def draw(self, context):
         layout = self.layout
         self.dimension.draw_ui(context,layout)
+        layout.prop(self,'update_all_dimensions')
 
 
 class pc_assembly_OT_show_annotation_properties(Operator):
@@ -655,9 +682,32 @@ class pc_assembly_OT_show_annotation_properties(Operator):
 
     obj_bp_name: StringProperty(name="Base Point Name")
 
+    update_all_annotations: BoolProperty(name="Update All Dimensions")
+
     annotation = None
 
     def execute(self, context):
+        if self.update_all_annotations:
+            annotations = []
+            for obj in context.scene.objects:
+                if 'IS_ANNOTATION' in obj and obj not in annotations:
+                    annotations.append(obj)
+
+            for obj in annotations:
+                dim = pc_types.Dimension(obj)
+                font_size = dim.get_prompt("Font Size")
+                line_thickness = dim.get_prompt("Line Thickness")
+                arrow_height = dim.get_prompt("Arrow Height")
+                arrow_length = dim.get_prompt("Arrow Length")
+                if font_size:
+                    font_size.set_value(self.annotation.get_prompt("Font Size").get_value())
+                if line_thickness:
+                    line_thickness.set_value(self.annotation.get_prompt("Line Thickness").get_value())
+                if arrow_height:
+                    arrow_height.set_value(self.annotation.get_prompt("Arrow Height").get_value())
+                if arrow_length:
+                    arrow_length.set_value(self.annotation.get_prompt("Arrow Length").get_value())               
+        
         return {'FINISHED'}
 
     def check(self, context):
@@ -672,6 +722,7 @@ class pc_assembly_OT_show_annotation_properties(Operator):
     def draw(self, context):
         layout = self.layout
         self.annotation.draw_ui(context,layout)
+        layout.prop(self,'update_all_annotations')
 
 
 class pc_assembly_OT_show_title_block_properties(Operator):
@@ -878,6 +929,64 @@ class pc_assembly_OT_create_pdf_of_assembly_views(bpy.types.Operator):
 
         self.create_pdf(context,images)
         return {'FINISHED'}
+
+class pc_assembly_OT_show_global_dimension_properties(Operator):
+    bl_idname = "pc_assembly.show_global_dimension_properties"
+    bl_label = "Show Global Dimension Properties"
+    bl_description = "This will update all of the dimensions properties in the current scene"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    update_all_assemblies: BoolProperty(name="Update All Assemblies")
+
+    def get_children_list(self,obj_bp,obj_list):
+        obj_list.append(obj_bp)
+        for obj in obj_bp.children:
+            self.get_children_list(obj,obj_list)
+        return obj_list
+
+    def execute(self, context):
+        obj_list = []
+        if self.update_all_assemblies:
+            obj_list = bpy.data.objects
+        else:
+            obj_bp = bpy.data.objects[self.obj_bp_name]
+            obj_list = self.get_children_list(obj_bp,obj_list)
+
+        for obj in obj_list:
+            if obj.animation_data:
+                for driver in obj.animation_data.drivers:
+                    obj.driver_remove(driver.data_path)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+
+            if obj.type == 'MESH':
+                if obj.data.shape_keys:
+                    bpy.ops.object.shape_key_add(from_mix=True)
+                    for index, key in enumerate(obj.data.shape_keys.key_blocks):
+                        obj.active_shape_key_index = 0
+                        bpy.ops.object.shape_key_remove(all=False)                    
+                    
+            if obj.type == 'CURVE':
+                bpy.ops.object.convert(target='MESH')
+                
+            for mod in obj.modifiers:
+                bpy.ops.object.modifier_apply(modifier=mod.name)
+
+            obj.lock_location = (False,False,False)
+            obj.lock_scale = (False,False,False)
+            obj.lock_rotation = (False,False,False)
+
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self,'update_all_assemblies')
 
 classes = (
     pc_assembly_OT_create_new_assembly,
