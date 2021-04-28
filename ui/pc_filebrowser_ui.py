@@ -20,6 +20,7 @@
 import bpy
 from bpy.types import Header, Panel, Menu, UIList
 from .. import pyclone_utils
+from ..pc_lib import pc_utils
 
 class FILEBROWSER_PT_library_tabs(Panel):
     bl_space_type = 'FILE_BROWSER'
@@ -45,6 +46,23 @@ class FILEBROWSER_PT_library_tabs(Panel):
                 layout.operator('pc_library.set_active_library',text=library.name,icon=library.icon,emboss=True).library_name = library.name
             else:
                 layout.operator('pc_library.set_active_library',text=library.name,icon=library.icon,emboss=False).library_name = library.name
+
+
+class FILEBROWSER_PT_library_headers(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'UI'
+    bl_label = "Library"
+    bl_category = "Attributes"
+    bl_options = {'HIDE_HEADER'}
+
+    def draw(self, context):
+        layout = self.layout
+        pyclone = pc_utils.get_scene_props(context.scene)
+        wm_props = pyclone_utils.get_wm_props(context.window_manager)
+        if pyclone.active_library_name in wm_props.libraries:
+            lib = wm_props.libraries[pyclone.active_library_name]
+            props = eval("context.scene." + lib.namespace)
+            props.draw_filebrowser_header(layout,context)
 
 
 class FILEBROWSER_HT_header(Header):
@@ -529,6 +547,7 @@ class FILEBROWSER_MT_context_menu(Menu):
 
 classes = (
     FILEBROWSER_PT_library_tabs,
+    FILEBROWSER_PT_library_headers,
     FILEBROWSER_HT_header,
     FILEBROWSER_PT_display,
     FILEBROWSER_PT_filter,

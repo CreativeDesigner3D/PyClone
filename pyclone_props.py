@@ -66,6 +66,7 @@ class Library(bpy.types.PropertyGroup):
     library_items: bpy.props.CollectionProperty(name="Library Items", type=Library_Item)
     activate_id: bpy.props.StringProperty(name="Activate ID",description="This is the operator id that gets called when you activate the library")
     drop_id: bpy.props.StringProperty(name="Drop ID",description="This is the operator id that gets called when you drop a file onto the 3D Viewport")
+    namespace: bpy.props.StringProperty(name="Namespace",description="This is the namespace of the library scene properties")
     icon: bpy.props.StringProperty(name="Icon",description="This is the icon to display in the panel")
 
     def load_library_items_from_module(self,module):
@@ -288,7 +289,7 @@ class Calculator(PropertyGroup):
 
     def calculate(self):
         self.distance_obj.hide_viewport = False
-
+        bpy.context.view_layer.update()
         non_equal_prompts_total_value = 0
         equal_prompt_qty = 0
         calc_prompts = []
@@ -485,11 +486,12 @@ class PC_Window_Manager_Props(bpy.types.PropertyGroup):
 
     scene_index: IntProperty(name="Scene Index",update=update_scene_index)
 
-    def add_library(self,name,activate_id,drop_id,icon):
+    def add_library(self,name,activate_id,drop_id,namespace,icon):
         lib = self.libraries.add()
         lib.name = name
         lib.activate_id = activate_id
         lib.drop_id = drop_id
+        lib.namespace = namespace
         lib.icon = icon
         return lib
 
