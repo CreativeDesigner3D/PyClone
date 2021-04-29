@@ -55,6 +55,14 @@ class FILEBROWSER_PT_library_headers(bpy.types.Panel):
     bl_category = "Attributes"
     bl_options = {'HIDE_HEADER'}
 
+    @classmethod
+    def poll(cls, context):
+        if len(context.area.spaces) > 1:
+            # can be None when save/reload with a file selector open
+            return context.space_data.params is not None
+        else:
+            return False
+
     def draw(self, context):
         layout = self.layout
         pyclone = pc_utils.get_scene_props(context.scene)
