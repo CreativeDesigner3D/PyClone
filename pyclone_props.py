@@ -242,6 +242,12 @@ class Calculator_Prompt(PropertyGroup):
         prompt_path = 'pyclone.calculators["' + calculator_name + '"].prompts["' + self.name + '"]'
         return Variable(self.id_data, prompt_path + '.distance_value',name)    
 
+    def get_value(self):
+        return self.distance_value
+
+    def set_value(self,value):
+        self.distance_value = value
+
 class Calculator(PropertyGroup):
     prompts: CollectionProperty(name="Prompts",type=Calculator_Prompt)
     distance_obj: PointerProperty(name="Distance Obj",type=bpy.types.Object)
@@ -602,6 +608,8 @@ class PC_Scene_Props(PropertyGroup):
     active_library_name: StringProperty(name="Active Library Name",default="")
 
     is_view_scene: BoolProperty(name="Is View Scene",default=False)
+    
+    show_default_blender_interface: BoolProperty(name="Show Default Blender Interface",default=False)
 
     page_size: EnumProperty(name="Page Size",
                             items=[('LETTER',"Letter 216 x 279 mm (8.5 X 11 in)","Letter 216 x 279 mm (8.5 X 11 in)"),

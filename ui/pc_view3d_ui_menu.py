@@ -46,11 +46,22 @@ def draw_add_object(self,context):
     layout.operator('pc_assembly.create_new_assembly',text="Add Assembly",icon='FILE_3D')
     layout.separator()    
 
+def draw_defaults(self,context):
+    props = context.scene.pyclone
+    layout = self.layout
+    layout.prop(props,'show_default_blender_interface')
+
+def draw_render_settings(self,context):
+    layout = self.layout
+    layout.operator('pc_general.show_render_settings',text="Render Settings",icon='SETTINGS')
+
 def register():
     # bpy.types.FILEBROWSER_MT_context_menu.prepend(draw_file_browser_menu)
     # bpy.types.VIEW3D_MT_object_context_menu.prepend(draw_assembly_properties)
 
     bpy.utils.register_class(VIEW3D_MT_assembly_vertex_groups)
+    bpy.types.TOPBAR_MT_file_defaults.append(draw_defaults)
+    bpy.types.TOPBAR_MT_render.prepend(draw_render_settings)
     bpy.types.VIEW3D_MT_edit_mesh.prepend(draw_mesh_context)
     bpy.types.VIEW3D_MT_object_context_menu.prepend(draw_assembly_properties)    
     bpy.types.VIEW3D_MT_add.prepend(draw_add_object)
@@ -60,6 +71,7 @@ def unregister():
     # bpy.types.FILEBROWSER_MT_context_menu.remove(draw_file_browser_menu)
     # bpy.types.VIEW3D_MT_object_context_menu.remove(draw_assembly_properties)
     bpy.utils.unregister_class(VIEW3D_MT_assembly_vertex_groups)
+    bpy.types.TOPBAR_MT_render.remove(draw_render_settings)
     bpy.types.VIEW3D_MT_edit_mesh.remove(draw_mesh_context)
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_assembly_properties)    
     bpy.types.VIEW3D_MT_add.remove(draw_add_object)
