@@ -26,11 +26,12 @@ class VIEW3D_PT_pc_layout_view(Panel):
     
     @classmethod
     def poll(cls, context):
-        for scene in bpy.data.scenes:
-            props = pyclone_utils.get_scene_props(scene)
-            if props.is_view_scene:
-                return True
-        return False
+        return True
+        # for scene in bpy.data.scenes:
+        #     props = pyclone_utils.get_scene_props(scene)
+        #     if props.is_view_scene:
+        #         return True
+        # return False
 
     def draw_header(self, context):
         layout = self.layout
@@ -73,7 +74,13 @@ class VIEW3D_PT_pc_layout_view(Panel):
             row = box.row()
             row.label(text="Print Style")                   
             row.prop(scene_props,'page_style',text="")
-            
+            row = box.row()
+            row.label(text="Render Lines") 
+            row.prop(rd, "use_freestyle", text="")            
+            row = box.row()
+            row.label(text="Transparent Background") 
+            row.prop(rd, "film_transparent", text="")    
+
             #CREATE VIEW OF ASSEMBLY    
             box = layout.box()
             box.label(text="Create View",icon='SEQ_PREVIEW')    
@@ -90,18 +97,8 @@ class VIEW3D_PT_pc_layout_view(Panel):
             box.operator('pc_assembly.add_title_block',text="Add Title Block",icon='MENU_PANEL')
 
         else:
-            pass
-            
-            # box.template_list("PC_UL_scenes"," ", bpy.data, "scenes", scene_props, "scene_index",rows=5,type='DEFAULT')
-
-
-            # box.prop(cam_obj.data,'ortho_scale',text="View Scale")
-            
-            # col = box.column(align=True)
-            # row = col.row(align=True)
-            # row.label(text="Resolution:")
-            # row.prop(rd, "resolution_x", text="X")
-            # row.prop(rd, "resolution_y", text="Y")
+            box = layout.box()
+            box.operator('pc_assembly.create_render_view',text="Add Render View",icon='MENU_PANEL')
 
 
     def draw(self, context):
