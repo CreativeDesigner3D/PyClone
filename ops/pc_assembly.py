@@ -813,6 +813,8 @@ class pc_assembly_OT_make_assembly_static(Operator):
             obj_list = self.get_children_list(obj_bp,obj_list)
 
         for obj in obj_list:
+            if obj.name not in context.view_layer.objects:
+                continue
             if obj.animation_data:
                 for driver in obj.animation_data.drivers:
                     obj.driver_remove(driver.data_path)
@@ -837,9 +839,6 @@ class pc_assembly_OT_make_assembly_static(Operator):
             obj.lock_rotation = (False,False,False)
 
         return {'FINISHED'}
-
-    def make_assembly_static(self,assembly):
-        pass
 
     def invoke(self,context,event):
         wm = context.window_manager
