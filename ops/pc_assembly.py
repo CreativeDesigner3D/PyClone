@@ -807,14 +807,12 @@ class pc_assembly_OT_make_assembly_static(Operator):
     def execute(self, context):
         obj_list = []
         if self.update_all_assemblies:
-            obj_list = bpy.data.objects
+            obj_list = context.view_layer.objects
         else:
             obj_bp = bpy.data.objects[self.obj_bp_name]
             obj_list = self.get_children_list(obj_bp,obj_list)
 
         for obj in obj_list:
-            if obj.name not in context.view_layer.objects:
-                continue
             if obj.animation_data:
                 for driver in obj.animation_data.drivers:
                     obj.driver_remove(driver.data_path)
@@ -832,7 +830,8 @@ class pc_assembly_OT_make_assembly_static(Operator):
                 bpy.ops.object.convert(target='MESH')
                 
             for mod in obj.modifiers:
-                bpy.ops.object.modifier_apply(modifier=mod.name)
+                if mod.type == 'HOOK':
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
 
             obj.lock_location = (False,False,False)
             obj.lock_scale = (False,False,False)
