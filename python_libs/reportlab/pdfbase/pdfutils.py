@@ -1,7 +1,7 @@
-#Copyright ReportLab Europe Ltd. 2000-2012
+#Copyright ReportLab Europe Ltd. 2000-2017
 #see license.txt for license details
-#history http://www.reportlab.co.uk/cgi-bin/viewcvs.cgi/public/reportlab/trunk/reportlab/pdfbase/pdfutils.py
-__version__=''' $Id$ '''
+#history https://hg.reportlab.com/hg-public/reportlab/log/tip/src/reportlab/pdfbase/pdfutils.py
+__version__='3.3.0'
 __doc__=''
 # pdfutils.py - everything to do with images, streams,
 # compression, and some constants
@@ -26,10 +26,13 @@ def _chunker(src,dst=[],chunkSize=60):
 ##########################################################
 _mode2cs = {'RGB':'RGB', 'CMYK': 'CMYK', 'L': 'G'}
 _mode2bpp = {'RGB': 3, 'CMYK':4, 'L':1}
-def makeA85Image(filename,IMG=None):
+def makeA85Image(filename,IMG=None, detectJpeg=False):
     import zlib
     img = ImageReader(filename)
-    if IMG is not None: IMG.append(img)
+    if IMG is not None:
+        IMG.append(img)
+        if detectJpeg and img.jpeg_fh():
+            return None
 
     imgwidth, imgheight = img.getSize()
     raw = img.getRGBData()
@@ -50,10 +53,13 @@ def makeA85Image(filename,IMG=None):
 
     append('EI')
     return code
-def makeRawImage(filename,IMG=None):
+def makeRawImage(filename,IMG=None,detectJpeg=False):
     import zlib
     img = ImageReader(filename)
-    if IMG is not None: IMG.append(img)
+    if IMG is not None:
+        IMG.append(img)
+        if detectJpeg and img.jpeg_fh():
+            return None
 
     imgwidth, imgheight = img.getSize()
     raw = img.getRGBData()
@@ -102,7 +108,7 @@ def cacheImageFile(filename, returnInMemory=0, IMG=None):
 def preProcessImages(spec):
     """Preprocesses one or more image files.
 
-    Accepts either a filespec ('C:\mydir\*.jpg') or a list
+    Accepts either a filespec ('C:\\mydir\\*.jpg') or a list
     of image filenames, crunches them all to save time.  Run this
     to save huge amounts of time when repeatedly building image
     documents."""

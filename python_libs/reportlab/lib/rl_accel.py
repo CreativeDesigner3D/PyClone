@@ -21,12 +21,14 @@ testing = getattr(reportlab,'_rl_testing',False)
 del reportlab
 
 for fn in __all__:
+    D={}
     try:
-        exec('from reportlab.lib._rl_accel import %s as f' % fn)
-        _c_funcs[fn] = f
+        exec('from reportlab.lib._rl_accel import %s as f' % fn,D)
+        _c_funcs[fn] = D['f']
         if testing: _py_funcs[fn] = None
     except ImportError:
         _py_funcs[fn] = None
+    del D
 
 if _py_funcs:
     from reportlab.lib.utils import isBytes, isUnicode, isSeq, isPy3, rawBytes, asNative, asUnicode, asBytes
@@ -320,7 +322,7 @@ if 'sameFrag' in _py_funcs:
         'returns 1 if two ParaFrags map out the same'
         if (hasattr(f,'cbDefn') or hasattr(g,'cbDefn')
                 or hasattr(f,'lineBreak') or hasattr(g,'lineBreak')): return 0
-        for a in ('fontName', 'fontSize', 'textColor', 'rise', 'underline', 'strike', 'link', "backColor"):
+        for a in ('fontName', 'fontSize', 'textColor', 'rise', 'us_lines', 'link', "backColor", "nobr"):
             if getattr(f,a,None)!=getattr(g,a,None): return 0
         return 1
     _py_funcs['sameFrag'] = sameFrag
@@ -334,19 +336,19 @@ for fn in __all__:
 del fn, f, G
 
 if __name__=='__main__':
-    import sys, os
+    import sys, os, subprocess
     for modname in 'reportlab.lib.rl_accel','reportlab.lib._rl_accel':
         for cmd  in (
             #"unicode2T1('abcde fghi . jkl ; mno',fonts)",
             #"unicode2T1(u'abcde fghi . jkl ; mno',fonts)",
-            "_instanceStringWidthU(font,'abcde fghi . jkl ; mno',10)",
-            "_instanceStringWidthU(font,u'abcde fghi . jkl ; mno',10)",
+            "instanceStringWidthT1(font,'abcde fghi . jkl ; mno',10)",
+            "instanceStringWidthT1(font,u'abcde fghi . jkl ; mno',10)",
             ):
             print('%s %s' % (modname,cmd))
             s=';'.join((
                 "from reportlab.pdfbase.pdfmetrics import getFont",
-                "from %s import unicode2T1,_instanceStringWidthU" % modname,
+                "from %s import unicode2T1,instanceStringWidthT1" % modname,
                 "fonts=[getFont('Helvetica')]+getFont('Helvetica').substitutionFonts""",
                 "font=fonts[0]",
                 ))
-            os.system('%s -m timeit -s"%s" "%s"' % (sys.executable,s,cmd))
+            subprocess.check_call([sys.executable,'-mtimeit','-s',s,cmd])

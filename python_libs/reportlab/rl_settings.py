@@ -1,4 +1,4 @@
-#Copyright ReportLab Europe Ltd. 2000-2013
+#Copyright ReportLab Europe Ltd. 2000-2017
 #see license.txt for license details
 '''default settings for reportlab
 
@@ -6,7 +6,7 @@ to override these drop a module rl_local_settings.py parallel to this file or
 anywhere on the path.
 '''
 import os, sys
-__version__=''' $Id$ '''
+__version__='3.3.0'
 __all__=tuple('''allowTableBoundsErrors
 shapeChecking
 defaultEncoding
@@ -48,9 +48,27 @@ listWrapOnFakeWidth
 T1SearchPath
 TTFSearchPath
 CMapSearchPath
-baseUnderlineProportion
 decimalSymbol
-errorOnDuplicatePageLabelPage'''.split())
+errorOnDuplicatePageLabelPage
+autoGenerateMissingTTFName
+allowTTFSubsetting
+spaceShrinkage
+underlineWidth
+underlineOffset
+underlineGap
+strikeWidth
+strikeOffset
+strikeGap
+hyphenationLang
+uriWasteReduce
+embeddedHyphenation
+hyphenationMinWordLength
+reserveTTFNotdef
+documentLang
+encryptionStrength
+trustedHosts
+trustedSchemes
+renderPMBackend'''.split())
 
 allowTableBoundsErrors =    1 # set to 0 to die on too large elements in tables in debug (recommend 1 for production use)
 shapeChecking =             1
@@ -72,7 +90,7 @@ eps_ttf_embed=              1                       #set to False to disable
 eps_ttf_embed_uid=          0                       #set to 1 to enable
 overlapAttachedSpace=       1                       #if set non false then adajacent flowable space after
                                                     #and space before are merged (max space is used).
-longTableOptimize =         1                       #default don't use Henning von Bargen's long table optimizations
+longTableOptimize =         1                       #default do use Henning von Bargen's long table optimizations
 autoConvertEncoding  =      0                       #convert internally as needed (experimental)
 _FUZZ=                      1e-6                    #fuzz for layout arithmetic
 wrapA85=                    0                       #set to 1 to get old wrapped line behaviour
@@ -100,10 +118,51 @@ debug=                      0                       #for debugging code
 rtlSupport=                 0                       #set to 1 to attempt import of RTL assistance eg fribidi etc etc
 listWrapOnFakeWidth=        1                       #set to 0/False to force platypus.flowables._listWrapOn to report correct widths
                                                     #else it reports minimum(required,available) width
-baseUnderlineProportion=    0.0                     #non-zero for doing font size proportional lines in Paragraph.py
+
+underlineWidth=             ''                      #empty to use canvas strokeWidth or a distance or number*<letter>
+                                                    #   num * <letter> make value proportional to a font size
+                                                    #   P paragraph font size
+                                                    #   L line max font size
+                                                    #   f first use font size
+                                                    #   F max fontsize in the tag
+
+underlineOffset=            '-0.125*F'              #fraction of fontSize from baseline to draw underlines at.
+underlineGap=               '1'                     #gap for double/triple underline
+
+strikeWidth=                ''
+strikeOffset=               '0.25*F'                #fraction of fontSize from baseline to draw strike through at.
+strikeGap=                  '1'                     #gap for double/triple strike
+
                                                     #by default typical value 0.05. may be overridden on a parastyle.
 decimalSymbol=              '.'                     #what we use to align floats numerically
 errorOnDuplicatePageLabelPage= 0                    #if True will cause repeated PageLabel page numbers to raise an error.
+autoGenerateMissingTTFName=0                        #if true we try to auto generate any missing TTF font name
+
+allowTTFSubsetting=         []                      #list of font file names that will be subsetted even when they
+                                                    #have the no subsetting flag set. These should be fonts for which
+                                                    #the user has explicit permission from the rights holder(s). 
+                                                    #This flag could already be overcome by hacking the code.
+                                                    #ReportLab takes no responsibility for the use of this setting.
+
+spaceShrinkage=0.05                                 #allowable space shrinkage to make lines fit
+hyphenationLang=''                                  #if pyphen installed set this to the language of your choice
+                                                    #eg 'en_GB'
+
+uriWasteReduce=0                                    #split URI if we would waste 0.3 of a line or if the URI#
+                                                    #would not fit on the next line; if zero then no splitting
+                                                    #is attempted. suggested value = 0.3
+embeddedHyphenation=0                               #if true attempt hypenation of words with embedded hyphens
+hyphenationMinWordLength=5                          #minimum length of words that can be hyphenated
+reserveTTFNotdef=0                                  #if true force subset element 0 to be zero(.notdef)
+                                                    #helps to fix bug in edge
+documentLang=None                                   #pdf document catalog Lang value xx-xx not ee_xx
+encryptionStrength=40                               #the bits for standard encryption 40, 128 or 256 (AES)
+trustedHosts=None                                   #set to a list of trusted for access hosts None means
+                                                    #all are trusted glob patterns eg *.reportlab.com are
+                                                    #allowed. In environment use a comma separated string.
+trustedSchemes=['file', 'rml', 'data', 'https',     #these url schemes are trusted
+                'http', 'ftp']
+renderPMBackend='_renderPM'                         #or 'rlPyCairo' if available
 
 # places to look for T1Font information
 T1SearchPath =  (
@@ -111,7 +170,7 @@ T1SearchPath =  (
                 'c:/Program Files/Adobe/Acrobat 8.0/Resource/Font', 
                 'c:/Program Files/Adobe/Acrobat 7.0/Resource/Font', 
                 'c:/Program Files/Adobe/Acrobat 6.0/Resource/Font', #Win32, Acrobat 6
-                'c:/Program Files/Adobe/Acrobat 5.0/Resource/Font',     #Win32, Acrobat 5
+                'c:/Program Files/Adobe/Acrobat 5.0/Resource/Font', #Win32, Acrobat 5
                 'c:/Program Files/Adobe/Acrobat 4.0/Resource/Font', #Win32, Acrobat 4
                 '%(disk)s/Applications/Python %(sys_version)s/reportlab/fonts', #Mac?
                 '/usr/lib/Acrobat9/Resource/Font',      #Linux, Acrobat 5?

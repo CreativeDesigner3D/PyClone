@@ -35,7 +35,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.utils import ascii_uppercase, ascii_lowercase
 from string import digits as string_digits
 
-class Barcode(Flowable):
+class Barcode(Flowable,object):
     """Abstract Base for barcodes. Includes implementations of
     some methods suitable for the more primitive barcode types"""
 
@@ -176,6 +176,12 @@ class Barcode(Flowable):
         else: func = 'drawString'
         getattr(canv,func)(x,y,text)
         canv.restoreState()
+
+    def _checkVal(self, name, v, allowed):
+        if v not in allowed:
+            raise ValueError('%s attribute %s is invalid %r\nnot in allowed %r' % (
+                self.__class__.__name__, name, v, allowed))
+        return v
 
 class MultiWidthBarcode(Barcode):
     """Base for variable-bar-width codes like Code93 and Code128"""

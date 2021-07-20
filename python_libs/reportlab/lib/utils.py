@@ -1,14 +1,30 @@
-#Copyright ReportLab Europe Ltd. 2000-2012
+#Copyright ReportLab Europe Ltd. 2000-2019
 #see license.txt for license details
 # $URI:$
-__version__=''' $Id$ '''
+__version__='3.5.34'
 __doc__='''Gazillions of miscellaneous internal utility functions'''
 
-import os, sys, imp, time, types
-from base64 import decodestring as base64_decodestring, encodestring as base64_encodestring
+import os, sys, time, types, datetime, ast
+from functools import reduce as functools_reduce
+literal_eval = ast.literal_eval
+try:
+    from base64 import decodebytes as base64_decodebytes, encodebytes as base64_encodebytes
+except ImportError:
+    from base64 import decodestring as base64_decodebytes, encodestring as base64_encodebytes
 from reportlab import isPy3
 from reportlab.lib.logger import warnOnce
 from reportlab.lib.rltempfile import get_rl_tempfile, get_rl_tempdir, _rl_getuid
+from . rl_safe_eval import rl_safe_exec, rl_safe_eval, safer_globals
+
+class __UNSET__(object):
+    @staticmethod
+    def __bool__():
+        return False
+    @staticmethod
+    def __str__():
+        return '__UNSET__'
+    __repr__ = __str__
+__UNSET__ = __UNSET__()
 
 try:
     import cPickle as pickle
@@ -19,6 +35,12 @@ try:
     from hashlib import md5
 except ImportError:
     import md5
+
+try:
+    import platform
+    isPyPy = platform.python_implementation()=='PyPy'
+except:
+    isPyPy = False
 
 def isFunction(v):
     return type(v) == type(isFunction)
@@ -51,14 +73,26 @@ if isPy3:
         return md5(s if isBytes(s) else s.encode('utf8')).hexdigest()
 
     def asBytes(v,enc='utf8'):
-        return v if isinstance(v,bytes) else v.encode(enc)
+        if isinstance(v,bytes): return v
+        try:
+            return v.encode(enc)
+        except:
+            annotateException('asBytes(%s,enc=%s) error: ' % (ascii(v),ascii(enc)))
 
     def asUnicode(v,enc='utf8'):
-        return v if isinstance(v,str) else v.decode(enc)
+        if isinstance(v,str): return v
+        try:
+            return v.decode(enc)
+        except:
+            annotateException('asUnicode(%s,enc=%s) error: ' % (ascii(v),ascii(enc)))
 
     def asUnicodeEx(v,enc='utf8'):
-        return v if isinstance(v,str) else v.decode(enc) if isinstance(v,bytes) else str(v)
-
+        if isinstance(v,str): return v
+        try:
+            return v.decode(enc) if isinstance(v,bytes) else str(v)
+        except:
+            annotateException('asUnicodeEx(%s,enc=%s) error: ' % (ascii(v),ascii(enc)))
+        
     def asNative(v,enc='utf8'):
         return asUnicode(v,enc=enc)
 
@@ -115,10 +149,10 @@ if isPy3:
             return str(x).encode(enc)
 
     def encode_label(args):
-        return base64_encodestring(pickle.dumps(args)).strip().decode('latin1')
+        return base64_encodebytes(pickle.dumps(args)).strip().decode('latin1')
 
     def decode_label(label):
-        return pickle.loads(base64_decodestring(label.encode('latin1')))
+        return pickle.loads(base64_decodebytes(label.encode('latin1')))
 
     def rawUnicode(s):
         '''converts first 256 unicodes 1-1'''
@@ -153,7 +187,11 @@ else:
             return join(["%02x" % ord(x) for x in md5(s).digest()], '')
 
     def asBytes(v,enc='utf8'):
-        return v if isinstance(v,str) else v.encode(enc)
+        if isinstance(v,str): return v
+        try:
+            return v.encode(enc)
+        except:
+            annotateException('asBytes(%s,enc=%s) error: ' % (repr(v),repr(enc)))
 
     def asNative(v,enc='utf8'):
         return asBytes(v,enc=enc)
@@ -171,10 +209,18 @@ else:
         return isinstance(v, unicode)
 
     def asUnicode(v,enc='utf8'):
-        return v if isinstance(v,unicode) else v.decode(enc)
+        if isinstance(v,unicode): return v
+        try:
+            return v.decode(enc)
+        except:
+            annotateException('asUnicode(%s,enc=%s) error: ' % (repr(v),repr(enc)))
 
     def asUnicodeEx(v,enc='utf8'):
-        return v if isinstance(v,unicode) else v.decode(enc) if isinstance(v,str) else  unicode(v)
+        if isinstance(v,unicode): return v
+        try:
+            return v.decode(enc) if isinstance(v,str) else str(v)
+        except:
+            annotateException('asUnicodeEx(%s,enc=%s) error: ' % (repr(v),repr(enc)))
 
     def isClass(v):
         return isinstance(v,(types.ClassType,type))
@@ -212,10 +258,10 @@ else:
     from string import letters as ascii_letters, uppercase as ascii_uppercase, lowercase as ascii_lowercase
 
     def encode_label(args):
-        return base64_encodestring(pickle.dumps(args)).strip()
+        return base64_encodebytes(pickle.dumps(args)).strip()
 
     def decode_label(label):
-        return pickle.loads(base64_decodestring(label))
+        return pickle.loads(base64_decodebytes(label))
 
     def rawUnicode(s):
         '''converts first 256 unicodes 1-1'''
@@ -226,6 +272,7 @@ else:
         return s.encode('latin1') if isinstance(s,unicode) else s
 
     def rl_exec(obj, G=None, L=None):
+        '''this is unsafe'''
         if G is None:
             frame = sys._getframe(1)
             G = frame.f_globals
@@ -234,7 +281,7 @@ else:
             del frame
         elif L is None:
             L = G
-        exec("""exec obj in G, L""")
+        exec(obj,G, L)
     rl_exec("""def rl_reraise(t, v, b=None):\n\traise t, v, b\n""")
 
     char2int = ord
@@ -248,7 +295,7 @@ def zipImported(ldr=None):
         if not ldr:
             ldr = sys._getframe(1).f_globals['__loader__']
         from zipimport import zipimporter
-        return ldr if isinstance(ldr,zipimporter) else None
+        return ldr if isinstance(ldr,zipimporter) and len(ldr._files) else None
     except:
         return None
 
@@ -365,15 +412,18 @@ del reportlab
 #Attempt to detect if this copy of reportlab is running in a
 #file system (as opposed to mostly running in a zip or McMillan
 #archive or Jar file).  This is used by test cases, so that
-#we can write test cases that don't get activated in a compiled
+#we can write test cases that don't get activated in frozen form.
 try:
     __file__
 except:
     __file__ = sys.argv[0]
 import glob, fnmatch
 try:
-    _isFSD = not __loader__
-    _archive = os.path.normcase(os.path.normpath(__loader__.archive))
+    __rl_loader__ = __loader__
+    _isFSD = not __rl_loader__
+    if not zipImported(ldr=__rl_loader__):
+        raise NotImplementedError("can't handle compact distro type %r" % __rl_loader__)
+    _archive = os.path.normcase(os.path.normpath(__rl_loader__.archive))
     _archivepfx = _archive + os.sep
     _archivedir = os.path.dirname(_archive)
     _archivedirpfx = _archivedir + os.sep
@@ -409,11 +459,11 @@ try:
         c, pfn = __startswith_rl(pattern)
         r = glob(pfn)
         if c or r==[]:
-            r += list(map(lambda x,D=_archivepfx,pjoin=pjoin: pjoin(_archivepfx,x),list(filter(lambda x,pfn=pfn,fnmatch=fnmatch: fnmatch(x,pfn),list(__loader__._files.keys())))))
+            r += list(map(lambda x,D=_archivepfx,pjoin=pjoin: pjoin(_archivepfx,x),list(filter(lambda x,pfn=pfn,fnmatch=fnmatch: fnmatch(x,pfn),list(__rl_loader__._files.keys())))))
         return r
 except:
     _isFSD = os.path.isfile(__file__)   #slight risk of wrong path
-    __loader__ = None
+    __rl_loader__ = None
     def _startswith_rl(fn):
         return fn
     def rl_glob(pattern,glob=glob.glob):
@@ -481,22 +531,6 @@ def recursiveImport(modulename, baseDir=None, noCWD=0, debug=0):
     finally:
         sys.path = opath
 
-def recursiveGetAttr(obj, name):
-    "Can call down into e.g. object1.object2[4].attr"
-    return eval(name, obj.__dict__)
-
-def recursiveSetAttr(obj, name, value):
-    "Can call down into e.g. object1.object2[4].attr = value"
-    #get the thing above last.
-    tokens = name.split('.')
-    if len(tokens) == 1:
-        setattr(obj, name, value)
-    else:
-        most = '.'.join(tokens[:-1])
-        last = tokens[-1]
-        parent = recursiveGetAttr(obj, most)
-        setattr(parent, last, value)
-
 def import_zlib():
     try:
         import zlib
@@ -549,9 +583,9 @@ def getArgvDict(**kw):
             elif isinstance(v,int):
                 v = int(av)
             elif isinstance(v,list):
-                v = list(eval(av))
+                v = list(literal_eval(av),{})
             elif isinstance(v,tuple):
-                v = tuple(eval(av))
+                v = tuple(literal_eval(av),{})
             else:
                 raise TypeError("Can't convert string %r to %s" % (av,type(v)))
         return v
@@ -566,7 +600,7 @@ def getArgvDict(**kw):
         handled = 0
         ke = k+'='
         for a in A:
-            if a.find(ke)==0:
+            if a.startswith(ke):
                 av = a[len(ke):]
                 A.remove(a)
                 R[k] = handleValue(v,av,func)
@@ -601,67 +635,81 @@ def open_for_read_by_name(name,mode='b'):
     try:
         return open(name,mode)
     except IOError:
-        if _isFSD or __loader__ is None: raise
-        #we have a __loader__, perhaps the filename starts with
+        if _isFSD or __rl_loader__ is None: raise
+        #we have a __rl_loader__, perhaps the filename starts with
         #the dirname(reportlab.__file__) or is relative
         name = _startswith_rl(name)
-        s = __loader__.get_data(name)
+        s = __rl_loader__.get_data(name)
         if 'b' not in mode and os.linesep!='\n': s = s.replace(os.linesep,'\n')
         return getBytesIO(s)
 
-if not isPy3:
-    import urllib2, urllib
-    urlopen=urllib2.urlopen
-    def datareader(url,opener=urllib.URLopener().open):
-        return opener(url).read()
-    del urllib, urllib2
-else:
-    from urllib.request import urlopen
-    from urllib.parse import unquote
-    import base64
-    #copied here from urllib.URLopener.open_data because
-    # 1) they want to remove it
-    # 2) the existing one is borken
-    def datareader(url, unquote=unquote, decodebytes=base64.decodebytes):
-        """Use "data" URL."""
-        # ignore POSTed data
-        #
-        # syntax of data URLs:
-        # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
-        # mediatype := [ type "/" subtype ] *( ";" parameter )
-        # data      := *urlchar
-        # parameter := attribute "=" value
+def open_for_read(name,mode='b'):
+    #auto initialized function`
+    if not isPy3:
+        import urllib2, urllib
+        from urlparse import urlparse
+        urlopen=urllib2.urlopen
+        def datareader(url,opener=urllib.URLopener().open):
+            return opener(url).read()
+        del urllib, urllib2
+    else:
+        from urllib.request import urlopen
+        from urllib.parse import unquote, urlparse
+        #copied here from urllib.URLopener.open_data because
+        # 1) they want to remove it
+        # 2) the existing one is borken
+        def datareader(url, unquote=unquote):
+            """Use "data" URL."""
+            # ignore POSTed data
+            #
+            # syntax of data URLs:
+            # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
+            # mediatype := [ type "/" subtype ] *( ";" parameter )
+            # data      := *urlchar
+            # parameter := attribute "=" value
+            try:
+                typ, data = url.split(',', 1)
+            except ValueError:
+                raise IOError('data error', 'bad data URL')
+            if not typ:
+                typ = 'text/plain;charset=US-ASCII'
+            semi = typ.rfind(';')
+            if semi >= 0 and '=' not in typ[semi:]:
+                encoding = typ[semi+1:]
+                typ = typ[:semi]
+            else:
+                encoding = ''
+            if encoding == 'base64':
+                # XXX is this encoding/decoding ok?
+                data = base64_decodebytes(data.encode('ascii'))
+            else:
+                data = unquote(data).encode('latin-1')
+            return data
+    from reportlab.rl_config import trustedHosts, trustedSchemes
+    if trustedHosts:
+        import re, fnmatch
+        def xre(s):
+            s = fnmatch.translate(s)
+            return s[4:-3] if s.startswith('(?s:') else s[:-7]
+        trustedHosts = re.compile(''.join(('^(?:',
+                                '|'.join(map(xre,trustedHosts)),
+                                ')\\Z')))
+    def open_for_read(name,mode='b'):
+        '''attempt to open a file or URL for reading'''
+        if hasattr(name,'read'): return name
         try:
-            typ, data = url.split(',', 1)
-        except ValueError:
-            raise IOError('data error', 'bad data URL')
-        if not typ:
-            typ = 'text/plain;charset=US-ASCII'
-        semi = typ.rfind(';')
-        if semi >= 0 and '=' not in typ[semi:]:
-            encoding = typ[semi+1:]
-            typ = typ[:semi]
-        else:
-            encoding = ''
-        if encoding == 'base64':
-            # XXX is this encoding/decoding ok?
-            data = decodebytes(data.encode('ascii'))
-        else:
-            data = unquote(data).encode('latin-1')
-        return data
-    del unquote, base64
-
-def open_for_read(name,mode='b', urlopen=urlopen, datareader=datareader):
-    '''attempt to open a file or URL for reading'''
-    if hasattr(name,'read'): return name
-    try:
-        return open_for_read_by_name(name,mode)
-    except:
-        try:
-            return getBytesIO(datareader(name) if name.startswith('data:') else urlopen(name).read())
+            return open_for_read_by_name(name,mode)
         except:
-            raise IOError('Cannot open resource "%s"' % name)
-del urlopen, datareader
+            try:
+                if trustedHosts is not None:
+                    purl = urlparse(name)
+                    if purl[0] and not ((purl[0] in ('data','file') or trustedHosts.match(purl[1])) and (purl[0] in trustedSchemes)):
+                        raise ValueError('Attempted untrusted host access')
+                return getBytesIO(datareader(name) if name[:5].lower()=='data:' else urlopen(name).read())
+            except:
+                raise IOError('Cannot open resource "%s"' % name)
+    globals()['open_for_read'] = open_for_read
+    return open_for_read(name,mode)
 
 def open_and_read(name,mode='b'):
     f = open_for_read(name,mode)
@@ -677,33 +725,52 @@ def open_and_readlines(name,mode='t'):
 def rl_isfile(fn,os_path_isfile=os.path.isfile):
     if hasattr(fn,'read'): return True
     if os_path_isfile(fn): return True
-    if _isFSD or __loader__ is None: return False
+    if _isFSD or __rl_loader__ is None: return False
     fn = _startswith_rl(fn)
-    return fn in list(__loader__._files.keys())
+    return fn in list(__rl_loader__._files.keys())
 
 def rl_isdir(pn,os_path_isdir=os.path.isdir,os_path_normpath=os.path.normpath):
     if os_path_isdir(pn): return True
-    if _isFSD or __loader__ is None: return False
+    if _isFSD or __rl_loader__ is None: return False
     pn = _startswith_rl(os_path_normpath(pn))
     if not pn.endswith(os.sep): pn += os.sep
-    return len(list(filter(lambda x,pn=pn: x.startswith(pn),list(__loader__._files.keys()))))>0
+    return len(list(filter(lambda x,pn=pn: x.startswith(pn),list(__rl_loader__._files.keys()))))>0
 
 def rl_listdir(pn,os_path_isdir=os.path.isdir,os_path_normpath=os.path.normpath,os_listdir=os.listdir):
-    if os_path_isdir(pn) or _isFSD or __loader__ is None: return os_listdir(pn)
+    if os_path_isdir(pn) or _isFSD or __rl_loader__ is None: return os_listdir(pn)
     pn = _startswith_rl(os_path_normpath(pn))
     if not pn.endswith(os.sep): pn += os.sep
-    return [x[len(pn):] for x in __loader__._files.keys() if x.startswith(pn)]
+    return [x[len(pn):] for x in __rl_loader__._files.keys() if x.startswith(pn)]
 
 def rl_getmtime(pn,os_path_isfile=os.path.isfile,os_path_normpath=os.path.normpath,os_path_getmtime=os.path.getmtime,time_mktime=time.mktime):
-    if os_path_isfile(pn) or _isFSD or __loader__ is None: return os_path_getmtime(pn)
+    if os_path_isfile(pn) or _isFSD or __rl_loader__ is None: return os_path_getmtime(pn)
     p = _startswith_rl(os_path_normpath(pn))
     try:
-        e = __loader__._files[p]
+        e = __rl_loader__._files[p]
     except KeyError:
         return os_path_getmtime(pn)
     s = e[5]
     d = e[6]
     return time_mktime((((d>>9)&0x7f)+1980,(d>>5)&0xf,d&0x1f,(s>>11)&0x1f,(s>>5)&0x3f,(s&0x1f)<<1,0,0,0))
+
+if isPy3 and sys.version_info[:2]>=(3,4):
+    from importlib import util as importlib_util
+    def __rl_get_module__(name,dir):
+        for ext in ('.py','.pyw','.pyo','.pyc','.pyd'):
+            path = os.path.join(dir,name+ext)
+            if os.path.isfile(path):
+                spec = importlib_util.spec_from_file_location(name,path)
+                return spec.loader.load_module()
+        raise ImportError('no suitable file found')
+else:
+    import imp
+    def __rl_get_module__(name,dir):
+        f, p, desc= imp.find_module(name,[dir])
+        try:
+            return imp.load_module(name,f,p,desc)
+        finally:
+            if f:
+                f.close()
 
 def rl_get_module(name,dir):
     if name in sys.modules:
@@ -712,10 +779,8 @@ def rl_get_module(name,dir):
     else:
         om = None
     try:
-        f = None
         try:
-            f, p, desc= imp.find_module(name,[dir])
-            return imp.load_module(name,f,p,desc)
+            return __rl_get_module__(name,dir)
         except:
             if isCompactDistro():
                 #attempt a load from inside the zip archive
@@ -727,8 +792,6 @@ def rl_get_module(name,dir):
             raise ImportError('%s[%s]' % (name,dir))
     finally:
         if om: sys.modules[name] = om
-        del om
-        if f: f.close()
 
 def _isPILImage(im):
     try:
@@ -739,6 +802,7 @@ def _isPILImage(im):
 class ImageReader(object):
     "Wraps up either PIL or Java to get data from bitmaps"
     _cache={}
+    _max_image_size = None
     def __init__(self, fileName,ident=None):
         if isinstance(fileName,ImageReader):
             self.__dict__ = fileName.__dict__   #borgize
@@ -786,16 +850,18 @@ class ImageReader(object):
                     #detect which library we are using and open the image
                     if not self._image:
                         self._image = self._read_image(self.fp)
+                        self.check_pil_image_size(self._image)
                     if getattr(self._image,'format',None)=='JPEG': self.jpeg_fh = self._jpeg_fh
                 else:
                     from reportlab.pdfbase.pdfutils import readJPEGInfo
                     try:
-                        print(self.fp)
-                        print(self.fp)
-                        print(readJPEGInfo(self.fp))
                         self._width,self._height,c=readJPEGInfo(self.fp)
                     except:
                         annotateException('\nImaging Library not available, unable to import bitmaps only jpegs\nfileName=%r identity=%s'%(fileName,self.identity()))
+                    size = self._width*self._height*c
+                    if self._max_image_size is not None and size>self._max+image_size:
+                        raise MemoryError('JPEG %s color %s x %s image would use %s > %s bytes'
+                                            %(c,self._width,self._height,size,self._max_image_size))
                     self.jpeg_fh = self._jpeg_fh
                     self._data = self.fp.read()
                     self._dataA=None
@@ -817,6 +883,23 @@ class ImageReader(object):
             return ImageIO.read(fp)
         else:
             return Image.open(fp)
+
+    @classmethod
+    def check_pil_image_size(cls, im):
+        max_image_size = cls._max_image_size
+        if max_image_size is None: return
+        w, h = im.size
+        m = im.mode
+        size = max(1,((1 if m=='1' else 8*len(m))*w*h)>>3)
+        if size>max_image_size:
+            raise MemoryError('PIL %s %s x %s image would use %s > %s bytes'
+                                            %(m,w,h,size,max_image_size))
+    @classmethod
+    def set_max_image_size(cls,max_image_size=None):
+        cls._max_image_size = max_image_size
+        if max_image_size is not None:
+            from reportlab.rl_config import register_reset
+            register_reset(cls.set_max_image_size)
 
     def _jpeg_fh(self):
         fp = self.fp
@@ -861,11 +944,12 @@ class ImageReader(object):
                 else:
                     im = self._image
                     mode = self.mode = im.mode
-                    if mode=='RGBA':
-                        if Image.VERSION.startswith('1.1.7'): im.load()
-                        self._dataA = ImageReader(im.split()[3])
-                        im = im.convert('RGB')
-                        self.mode = 'RGB'
+                    if mode in ('LA','RGBA'):
+                        if getattr(Image,'VERSION','').startswith('1.1.7'): im.load()
+                        self._dataA = ImageReader(im.split()[3 if mode=='RGBA' else 1])
+                        nm = mode[:-1]
+                        im = im.convert(nm)
+                        self.mode = nm
                     elif mode not in ('L','RGB','CMYK'):
                         if im.format=='PNG' and im.mode=='P' and 'transparency' in im.info:
                             im = im.convert('RGBA')
@@ -972,7 +1056,7 @@ class DebugMemo:
         md=None
         try:
             import marshal
-            md=marshal.loads(__loader__.get_data('meta_data.mar'))
+            md=marshal.loads(__rl_loader__.get_data('meta_data.mar'))
             project_version=md['project_version']
         except:
             pass
@@ -998,7 +1082,7 @@ class DebugMemo:
                         'version_info': getattr(sys,'version_info','????'),
                         'winver': getattr(sys,'winver','????'),
                         'environment': '\n\t\t\t'.join(['']+['%s=%r' % (k,env[k]) for k in K]),
-                        '__loader__': repr(__loader__),
+                        '__rl_loader__': repr(__rl_loader__),
                         'project_meta_data': md,
                         'project_version': project_version,
                         })
@@ -1227,7 +1311,7 @@ def simpleSplit(text,fontName,fontSize,maxWidth):
     if maxWidth:
         L = []
         for l in lines:
-            L[-1:-1] = _simpleSplit(l,maxWidth,SW)
+            L.extend(_simpleSplit(l,maxWidth,SW))
         lines = L
     return lines
 
@@ -1353,35 +1437,10 @@ def findInPaths(fn,paths,isfile=True,fail=False):
     if fail: raise ValueError('cannot locate %r with paths=%r' % (fn,paths))
     return fn
 
-def annotateException(msg,enc='utf8'):
+def annotateException(msg,enc='utf8',postMsg='',sep=' '):
     '''add msg to the args of an existing exception'''
-    if not msg: raise
     t,v,b=sys.exc_info()
-    if not hasattr(v,'args'): raise
-    e = -1
-    A = list(v.args)
-    for i,a in enumerate(A):
-        if isinstance(a,str):
-            e = i
-            break
-    if e>=0:
-        if not isPy3:
-            if isUnicode(a):
-                if not isUnicode(msg):
-                    msg=msg.decode(enc)
-            else:
-                if isUnicode(msg):
-                    msg=msg.encode(enc)
-                else:
-                    msg = str(msg)
-        if isinstance(v,IOError) and getattr(v,'strerror',None):
-            v.strerror = msg+'\n'+str(v.strerror)
-        else:
-            A[e] += msg
-    else:
-        A.append(msg)
-    v.args = tuple(A)
-    rl_reraise(t,v,b)
+    rl_reraise(t,t(sep.join((_ for _ in (msg,str(v),postMsg) if _))),b)
 
 def escapeOnce(data):
     """Ensure XML output is escaped just once, irrespective of input
@@ -1440,3 +1499,102 @@ def makeFileName(s):
     if not isUnicode(s):
         s = s.decode('utf8')
     return s
+
+class FixedOffsetTZ(datetime.tzinfo):
+    """Fixed offset in minutes east from UTC."""
+
+    def __init__(self, h, m, name):
+        self.__offset = datetime.timedelta(hours=h, minutes = m)
+        self.__name = name
+
+    def utcoffset(self, dt):
+        return self.__offset
+
+    def tzname(self, dt):
+        return self.__name
+
+    def dst(self, dt):
+        return datetime.timedelta(0)
+
+class TimeStamp(object):
+    def __init__(self,invariant=None):
+        if invariant is None:
+            from reportlab.rl_config import invariant
+        t = os.environ.get('SOURCE_DATE_EPOCH','').strip()
+        if invariant or t:
+            t = int(t) if t else 946684800.0
+            lt = time.gmtime(t)
+            dhh = dmm = 0
+            self.tzname = 'UTC'
+        else:
+            t = time.time()
+            lt = tuple(time.localtime(t))
+            dhh = int(time.timezone / (3600.0))
+            dmm = (time.timezone % 3600) % 60
+            self.tzname = '' 
+        self.t = t
+        self.lt = lt
+        self.YMDhms = tuple(lt)[:6]
+        self.dhh = dhh
+        self.dmm = dmm
+
+    @property
+    def datetime(self):
+        if self.tzname:
+            return datetime.datetime.fromtimestamp(self.t,FixedOffsetTZ(self.dhh,self.dmm,self.tzname))
+        else:
+            return datetime.datetime.now()
+
+    @property
+    def asctime(self):
+        a = time.asctime(self.lt)
+        if not isPy3:
+            a = a.split()
+            a[2] = a[2].lstrip('0')
+            a = ' '.join(a)
+        return a
+
+def recursiveGetAttr(obj, name, g=None):
+    "Can call down into e.g. object1.object2[4].attr"
+    if not isStr(name): raise TypeError('invalid reursive acess using %r' % name)
+    name = asNative(name)
+    name = name.strip()
+    if not name: raise ValueError('empty recursive access')
+    dot = '.' if name and name[0] not in '[.(' else ''
+    return rl_safe_eval('obj%s%s'%(dot,name), g={}, l=dict(obj=obj))
+
+def recursiveSetAttr(obj, name, value):
+    "Can call down into e.g. object1.object2[4].attr = value"
+    #get the thing above last.
+    tokens = name.split('.')
+    if len(tokens) == 1:
+        setattr(obj, name, value)
+    else:
+        most = '.'.join(tokens[:-1])
+        last = tokens[-1]
+        parent = recursiveGetAttr(obj, most)
+        setattr(parent, last, value)
+
+def recursiveDelAttr(obj, name):
+    tokens = name.split('.')
+    if len(tokens) == 1:
+        delattr(obj, name)
+    else:
+        most = '.'.join(tokens[:-1])
+        last = tokens[-1]
+        parent = recursiveGetAttr(obj, most)
+        delattr(parent, last)
+
+def yieldNoneSplits(L):
+    '''yield sublists of L separated by None; the Nones disappear'''
+    i = 0
+    n = len(L)
+    while i<n:
+        try:
+            j = L.index(None,i)
+            yield L[i:j]
+            i = j+1
+            if not L: break
+        except ValueError:
+            yield L[i:]
+            break
