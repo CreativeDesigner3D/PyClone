@@ -4,6 +4,7 @@ from bpy.types import (
         Panel,
         PropertyGroup,
         UIList,
+        AddonPreferences,
         )
 from bpy.props import (
         BoolProperty,
@@ -17,6 +18,7 @@ from bpy.props import (
 import os
 import inspect
 import math
+from . import addon_updater_ops
 
 prompt_types = [('FLOAT',"Float","Float"),
                 ('DISTANCE',"Distance","Distance"),
@@ -325,6 +327,47 @@ def update_flip_y(self,context):
         self.id_data.scale.y = -1
     else:
         self.id_data.scale.y = 1
+
+
+class PC_AddonPreferences(AddonPreferences):
+    bl_idname = __package__
+
+    auto_check_update: bpy.props.BoolProperty(
+        name="Auto-check for Update",
+        description="If enabled, auto-check for updates using an interval",
+        default=False)
+
+    updater_interval_months: bpy.props.IntProperty(
+        name='Months',
+        description="Number of months between checking for updates",
+        default=0,
+        min=0)
+
+    updater_interval_days: bpy.props.IntProperty(
+        name='Days',
+        description="Number of days between checking for updates",
+        default=7,
+        min=0,
+        max=31)
+
+    updater_interval_hours: bpy.props.IntProperty(
+        name='Hours',
+        description="Number of hours between checking for updates",
+        default=0,
+        min=0,
+        max=23)
+
+    updater_interval_minutes: bpy.props.IntProperty(
+        name='Minutes',
+        description="Number of minutes between checking for updates",
+        default=0,
+        min=0,
+        max=59)
+
+    def draw(self, context):
+        layout = self.layout
+        addon_updater_ops.update_settings_ui(self, context)
+
 
 class PC_Object_Props(PropertyGroup):
     show_object_props: BoolProperty(name="Show Object Props", default=False)
@@ -691,6 +734,7 @@ classes = (
     Prompt,
     Calculator_Prompt,
     Calculator,
+    PC_AddonPreferences,
     PC_Object_Props,
     PC_Collection_Props,
     PC_Window_Manager_Props,

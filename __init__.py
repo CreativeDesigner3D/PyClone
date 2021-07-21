@@ -32,6 +32,8 @@ from .ops import pc_object
 from .ops import pc_general
 from .ops import pc_window_manager
 from . import pyclone_props
+from . import pyclone_utils
+from . import addon_updater_ops
 
 @persistent
 def load_driver_functions(scene):
@@ -46,6 +48,7 @@ def load_driver_functions(scene):
 addon_keymaps = []
 
 def register():
+    addon_updater_ops.register(bl_info)
     pc_filebrowser_ui.register()
     pc_lists.register()
     pc_view3d_ui_menu.register()
@@ -63,6 +66,7 @@ def register():
     pc_window_manager.register()
     pyclone_props.register()
     bpy.app.handlers.load_post.append(load_driver_functions)
+    pyclone_utils.addon_version = bl_info['version']
 
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon

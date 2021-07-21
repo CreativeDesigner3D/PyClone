@@ -2,6 +2,8 @@ import bpy
 import os
 from .pc_lib import pc_utils, pc_types
 
+addon_version = ()
+
 def get_wm_props(window_manager):
     return window_manager.pyclone
 
