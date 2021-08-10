@@ -404,7 +404,7 @@ class Assembly_Layout():
         view_settings = self.scene.view_settings
         view_settings.view_transform = 'Standard'
         view_settings.look = 'High Contrast'
-        view_settings.exposure = 4
+        # view_settings.exposure = 4
 
         self.create_linesets()
 
