@@ -404,7 +404,6 @@ class Assembly_Layout():
         view_settings = self.scene.view_settings
         view_settings.view_transform = 'Standard'
         view_settings.look = 'High Contrast'
-        # view_settings.exposure = 4
 
         self.create_linesets()
 
@@ -557,12 +556,6 @@ class Title_Block(Assembly):
                 child.hide_viewport = True
 
     def draw_ui(self,context,layout):
-        arrow_height = self.get_prompt("Arrow Height")
-        arrow_length = self.get_prompt("Arrow Length")
-        extend_first_line_amount = self.get_prompt("Extend First Line Amount")
-        extend_second_line_amount = self.get_prompt("Extend Second Line Amount")
-        line_thickness = self.get_prompt("Line Thickness")
-
         row = layout.row()
         row.label(text="Drawing Title:")
         row.prop(self.obj_drawing_title.data,'body',text="")
