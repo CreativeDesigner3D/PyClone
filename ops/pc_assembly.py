@@ -38,6 +38,9 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY
 from reportlab.platypus.flowables import HRFlowable
 
+class Item(PropertyGroup):
+    pass  
+
 class pc_assembly_OT_create_new_assembly(Operator):
     bl_idname = "pc_assembly.create_new_assembly"
     bl_label = "Create New Assembly"
@@ -619,15 +622,40 @@ class pc_assembly_OT_add_title_block(bpy.types.Operator):
     bl_description = "This adds a title block to the current layout"
     bl_options = {'UNDO'}
 
+    title_blocks: CollectionProperty(name="Title Blocks",type=Item)
+    title_block_index: IntProperty(name="Title Block Index")
+
     @classmethod
     def poll(cls, context):
         return True
 
-    def execute(self, context):
+    def invoke(self,context,event):
+        PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)),'pc_lib','assets','Title Blocks')
+        files = os.listdir(PATH)
+        for file in files:
+            filename, ext = os.path.splitext(file)
+            tb = self.title_blocks.add()
+            tb.name = filename
+        if len(self.title_blocks) == 1:
+            self.add_title_block(context)
+            return {'FINISHED'}
+        else:
+            wm = context.window_manager
+            return wm.invoke_props_dialog(self, width=200)
+
+    def add_title_block(self,context):
+        tb = self.title_blocks[self.title_block_index]
         assembly_layout = pc_types.Assembly_Layout(context.scene)
         title_block = pc_types.Title_Block()
-        title_block.create_title_block(assembly_layout)
+        title_block.create_title_block(assembly_layout,tb.name)
+
+    def execute(self, context):
+        self.add_title_block(context)
         return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.template_list("PC_UL_combobox"," ", self, "title_blocks", self, "title_block_index",rows=5,type='DEFAULT')
 
 
 class pc_assembly_OT_add_annotation(bpy.types.Operator):
@@ -1023,6 +1051,7 @@ class pc_assembly_OT_show_global_dimension_properties(Operator):
         layout.prop(self,'update_all_assemblies')
 
 classes = (
+    Item,
     pc_assembly_OT_create_new_assembly,
     pc_assembly_OT_delete_assembly,
     pc_assembly_OT_select_base_point,

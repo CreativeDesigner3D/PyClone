@@ -491,10 +491,10 @@ class Title_Block(Assembly):
                 if child.type == 'FONT':
                     self.obj_text = child   
 
-    def create_title_block(self,layout_view):
+    def create_title_block(self,layout_view,title_block_name="Title Block"):
         collection = layout_view.dimension_collection
 
-        PATH = os.path.join(os.path.dirname(__file__),'assets',"Title_Block.blend")
+        PATH = os.path.join(os.path.dirname(__file__),'assets','Title Blocks',title_block_name + ".blend")
 
         with bpy.data.libraries.load(PATH, False, False) as (data_from, data_to):
             data_to.objects = data_from.objects
@@ -545,6 +545,10 @@ class Title_Block(Assembly):
             self.obj_bp.location.z = -1.001
             self.obj_x.location.x = pc_unit.inch(14)
             self.obj_y.location.y = pc_unit.inch(8.5)
+
+        for child in self.obj_bp.children:
+            if child.type == 'EMPTY':
+                child.hide_viewport = True
 
     def draw_ui(self,context,layout):
         arrow_height = self.get_prompt("Arrow Height")
