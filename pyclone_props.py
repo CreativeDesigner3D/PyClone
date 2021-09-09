@@ -91,7 +91,7 @@ class Prompt(PropertyGroup):
     prompt_type: EnumProperty(name="Prompt Type",items=prompt_types)
 
     float_value: FloatProperty(name="Float Value")
-    distance_value: FloatProperty(name="Distance Value",subtype='DISTANCE',precision=2)
+    distance_value: FloatProperty(name="Distance Value",subtype='DISTANCE',precision=5)
     angle_value: FloatProperty(name="Angle Value",subtype='ANGLE')
     quantity_value: IntProperty(name="Quantity Value",subtype='DISTANCE',min=0)
     percentage_value: FloatProperty(name="Percentage Value",subtype='PERCENTAGE',min=0,max=1)
@@ -231,7 +231,7 @@ class Prompt(PropertyGroup):
 
 
 class Calculator_Prompt(PropertyGroup):
-    distance_value: FloatProperty(name="Distance Value",subtype='DISTANCE')
+    distance_value: FloatProperty(name="Distance Value",subtype='DISTANCE',precision=5)
     equal: BoolProperty(name="Equal",default=True)
 
     def draw(self,layout):
