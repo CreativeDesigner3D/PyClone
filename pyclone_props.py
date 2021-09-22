@@ -105,6 +105,8 @@ class Prompt(PropertyGroup):
     combobox_columns: IntProperty(name="Combobox Columns",default=1,min=1)
 
     def get_var(self,name):
+        if self.name == "":
+            print("NO NAME FOUND SETTING DRIVER",name)
         prompt_path = 'pyclone.prompts["' + self.name + '"]'
         if self.prompt_type == 'FLOAT':
             return Variable(self.id_data, prompt_path + '.float_value',name)

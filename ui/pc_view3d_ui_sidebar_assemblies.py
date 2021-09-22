@@ -449,6 +449,7 @@ class VIEW3D_MT_assembly_menu(bpy.types.Menu):
             layout.operator('pc_assembly.duplicate_assembly',text="Duplicate Assembly",icon='DUPLICATE').obj_bp_name = assembly_bp.name
             layout.operator('pc_assembly.create_assembly_layout',text="Create Assembly Layout",icon='CAMERA_DATA').obj_bp_name = assembly_bp.name
             layout.operator('pc_assembly.make_assembly_static',text="Make Assembly Static",icon='LOCKED').obj_bp_name = assembly_bp.name
+            layout.operator('pc_assembly.convert_to_object',text="Convert to Object",icon='MESH_CUBE').obj_bp_name = assembly_bp.name
             layout.operator('pc_assembly.delete_assembly',icon='X').obj_bp_name = assembly_bp.name
 
 

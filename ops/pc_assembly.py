@@ -869,7 +869,101 @@ class pc_assembly_OT_make_assembly_static(Operator):
 
     def invoke(self,context,event):
         wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=400)
+        return wm.invoke_props_dialog(self, width=200)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self,'update_all_assemblies')
+
+
+class pc_assembly_OT_convert_to_object(Operator):
+    bl_idname = "pc_assembly.convert_to_object"
+    bl_label = "Convert to Object"
+    bl_description = "This will apply all modifers and drivers for the assembly and create one object"
+    bl_options = {'UNDO'}
+
+    obj_bp_name: StringProperty(name="Base Point Name")
+
+    update_all_assemblies: BoolProperty(name="Update All Assemblies")
+
+    def get_children_list(self,obj_bp,obj_list):
+        obj_list.append(obj_bp)
+        for obj in obj_bp.children:
+            self.get_children_list(obj,obj_list)
+        return obj_list
+
+    def execute(self, context):
+        obj_list = []
+        if self.update_all_assemblies:
+            obj_list = context.view_layer.objects
+        else:
+            obj_bp = bpy.data.objects[self.obj_bp_name]
+            obj_list = self.get_children_list(obj_bp,obj_list)
+
+        for obj in obj_list:
+            if obj.animation_data:
+                for driver in obj.animation_data.drivers:
+                    obj.driver_remove(driver.data_path)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+
+            if obj.type == 'MESH':
+                if obj.data.shape_keys:
+                    bpy.ops.object.shape_key_add(from_mix=True)
+                    for index, key in enumerate(obj.data.shape_keys.key_blocks):
+                        obj.active_shape_key_index = 0
+                        bpy.ops.object.shape_key_remove(all=False)                    
+                    
+            if obj.type == 'CURVE':
+                if obj.data.bevel_mode == 'OBJECT' and obj.data.bevel_object != None:
+                    context.view_layer.objects.active = obj
+                    bpy.ops.object.convert(target='MESH')
+                
+            for mod in obj.modifiers:
+                try:
+                    context.view_layer.objects.active = obj
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                except:
+                    print("ERROR APPLYING MODIFIER",mod,obj)
+
+            obj.lock_location = (False,False,False)
+            obj.lock_scale = (False,False,False)
+            obj.lock_rotation = (False,False,False)
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        empty_list = []
+        bp_list = []
+        for obj in obj_list:
+            if obj.type == 'MESH':
+                if obj.hide_viewport:
+                    empty_list.append(obj)
+                elif 'IS_OPENING_MESH' in obj:
+                    empty_list.append(obj)
+                else:
+                    context.view_layer.objects.active = obj
+                    obj.select_set(True)
+            if obj.type == 'EMPTY' and 'obj_bp' not in obj:
+                empty_list.append(obj)
+            if obj.type == 'EMPTY' and 'obj_bp' in obj:
+                bp_list.append(obj)
+        
+        bpy.ops.object.join()
+
+        mesh_obj = context.active_object
+
+        mat = mesh_obj.matrix_world.copy()
+
+        pc_utils.delete_obj_list(empty_list)
+        pc_utils.delete_obj_list(bp_list)
+
+        mesh_obj.matrix_world = mat
+
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self, width=200)
 
     def draw(self, context):
         layout = self.layout
@@ -1070,6 +1164,7 @@ classes = (
     pc_assembly_OT_add_title_block,
     pc_assembly_OT_add_annotation,
     pc_assembly_OT_make_assembly_static,
+    pc_assembly_OT_convert_to_object,
     pc_assembly_OT_return_to_model_view,
     pc_assembly_OT_create_assembly_view,
     pc_assembly_OT_create_render_view,
