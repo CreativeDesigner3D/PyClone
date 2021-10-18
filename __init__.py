@@ -14,6 +14,7 @@ import bpy
 from bpy.app.handlers import persistent
 import os
 import sys
+import time
 PATH = os.path.join(os.path.dirname(__file__),"python_libs")
 sys.path.append(PATH)
 from .ui import pc_filebrowser_ui
@@ -44,6 +45,13 @@ def load_driver_functions(scene):
     for name, obj in inspect.getmembers(pyclone_driver_functions):
         if name not in bpy.app.driver_namespace:
             bpy.app.driver_namespace[name] = obj
+    start_time = time.time()
+    for obj in bpy.data.objects:
+        if obj.type in {'EMPTY','MESH'}:
+            drivers = pyclone_utils.get_drivers(obj)
+            for DR in drivers:  
+                DR.driver.expression = DR.driver.expression
+    print("Reloading Drivers: --- %s seconds ---" % (time.time() - start_time))
 
 addon_keymaps = []
 
